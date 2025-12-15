@@ -1,18 +1,29 @@
-# Ekstraklasa_predictor
-## Predictor for Polish League Ekstraklasa
-That predictor will take data from 25 seasons of games and using sckit-learn random forest classifier making predicition for upcoming matches
-making percent of win and makes prediction for the team
+#  Ekstraklasa Predictor
 
-## Database
-I want to make database based on postgres where i will keep information about every team 
+A machine learning application that predicts Polish Ekstraklasa football match outcomes using historical data from 25 seasons.
 
-## Scraper
-I will scrap data from https://www.flashscore.pl/ using playwright about every team to get context for ML and i want to use 
+**INPUT:** 2 teams  
+**OUTPUT:** Win probability (%) and predicted winner
 
-## Machine learning model
-i want to use random forest classifier from sckit-learn lib
+---
 
+##  Project Overview
 
-INPUT = 2 teams
+This project consists of three main components:
+- **Scraper**: Collects historical match data from FlashScore.pl
+- **Database**: Stores team information and match statistics in PostgreSQL
+- **ML Model**: Predicts match outcomes using Random Forest Classifier
 
-OUTPUT = chance of win in % and the winner
+---
+
+##  Technology Stack
+
+- **Python 3.8+**
+- **Web Scraping**: Playwright
+- **Database**: PostgreSQL
+- **Machine Learning**: scikit-learn (Random Forest Classifier)
+- **Data Processing**: polars, numpy
+- **Additional**: sqlalchemy, psycopg2
+
+---
+
