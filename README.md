@@ -29,5 +29,13 @@ This project consists of three main components:
 
 ## UML schema of Database
 
+              List of relations
+ Schema |      Name       | Type  |  Owner   
+--------+-----------------+-------+----------
+ public | arbiter         | table | postgres
+ public | match           | table | postgres
+ public | match_statistic | table | postgres
+ public | stadions        | table | postgres
+ public | teams           | table | postgres
 
 ![UML SCHEMA OF DB](https://github.com/m-onerl/ekstraklasa_predictor/blob/main/pictures/database_schema.png)
