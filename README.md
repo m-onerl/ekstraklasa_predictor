@@ -27,3 +27,7 @@ This project consists of three main components:
 
 ---
 
+## UML schema of Database
+
+
+![UML SCHEMA OF DB](home/monerl/Projekty/ekstraklasa_predictor/pictures/database_schema.png)
