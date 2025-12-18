@@ -32,17 +32,28 @@ async def test_basic_scraper():
                 href = await link.get_attribute("href")
                 year = text.strip().split()[-1]
                 
+                url = f"https://www.flashscore.pl{href}wyniki/"
+                
                 seasons_data.append({
                     'index' : i,
                     'text' : text.strip(),
-                    'href' : href,
+                    'href' : url,
                     'year' : year
                 })
                 
                 logger.info(f"{i+1}. {text.strip()} -> {href}")
                 
         logger.info(f"Total found seasons: {len(seasons_data)}")
-
+        
+        # list comprahension to get link from season data
+        res = [d.get('href') for d in seasons_data if 'href' in d]
+        
+        for link in res:
+            await page.goto(link, wait_until="networkidle")
+            await asyncio.sleep(2)
+        # TODO: add logic for click for more matches and 
+        #               get every one match to get data about them 
+        
         await asyncio.sleep(3)
         await browser.close()
     
