@@ -23,8 +23,28 @@ async def test_basic_scraper():
         season_links = await page.query_selector_all(".archiveLatte__season")
         logger.info(f"Found out {len(season_links)} seasons")
 
-        
+        seasons_data = []
+        for i,  season_element in enumerate(season_links):
+            
+            link = await season_element.query_selector("a.archiveLatte__text.archiveLatte__text--clickable")
+            if link:
+                text = await link.inner_text()
+                href = await link.get_attribute("href")
+                year = text.strip().split()[-1]
+                
+                seasons_data.append({
+                    'index' : i,
+                    'text' : text.strip(),
+                    'href' : href,
+                    'year' : year
+                })
+                
+                logger.info(f"{i+1}. {text.strip()} -> {href}")
+                
+        logger.info(f"Total found seasons: {len(seasons_data)}")
 
-
+        await asyncio.sleep(3)
+        await browser.close()
+    
 if __name__ == "__main__":
     asyncio.run(test_basic_scraper())
