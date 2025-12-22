@@ -8,17 +8,17 @@ logging.basicConfig(
     level = logging.INFO,
     format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-async def test_basic_scraper():
-    logger.info("Starting Playwright test...")
+async def scraper():
+
     
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)  
+        browser = await p.chromium.launch(headless = False)  
         page = await browser.new_page()
 
         url = "https://www.flashscore.pl/pilka-nozna/polska/pko-bp-ekstraklasa/archiwum/"
         logger.info(f"Navigating to: {url}")
         
-        await page.goto(url, wait_until="networkidle")
+        await page.goto(url, wait_until = "networkidle")
         await asyncio.sleep(2)
         season_links = await page.query_selector_all(".archiveLatte__season")
         logger.info(f"Found out {len(season_links)} seasons")
@@ -48,7 +48,7 @@ async def test_basic_scraper():
         res = [d.get('href') for d in seasons_data if 'href' in d]
         
         for link in res:
-            await page.goto(link, wait_until="networkidle")
+            await page.goto(link, wait_until = "networkidle")
             await asyncio.sleep(1)
             
             while True:
@@ -66,17 +66,24 @@ async def test_basic_scraper():
                     else:
                         logger.info("All matches loaded")
                         break
-                    
+
                 except Exception as e:
                     logger.error(f"Error with clicking into button")
                     break
+                
+            match_links = await page.query_selector_all('.eventRowLink')
+            logger.info(f'Founded {len(match_links)}')
+            
+            for match in match_links:
+                try:
+            #TODO: add go into match and get every data what i want and keep that into dict
+            # from dict into database
+            
+            #await page.goto(match, wait_until = "contentloaded")
                     
-                    
-        #TODO: add logic for click for more matches and 
-        #               get every one match to get data about them 
         
         await asyncio.sleep(3)
         await browser.close()
     
 if __name__ == "__main__":
-    asyncio.run(test_basic_scraper())
+    asyncio.run(scraper())
