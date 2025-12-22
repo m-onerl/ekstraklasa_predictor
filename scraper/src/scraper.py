@@ -51,7 +51,22 @@ async def test_basic_scraper():
         for link in res:
             await page.goto(link, wait_until="networkidle")
             await asyncio.sleep(2)
-        # TODO: add logic for click for more matches and 
+            
+            while True:
+                try:
+                    show_more = await page.query_selector(".wcl-bold_NZXv6.wcl-scores-caption-05_Z8Ux-.wcl-scores_Na715")
+                    if show_more:
+                        await show_more.click()
+                        await asyncio.sleep(1)
+                        logger.info("Founded button to show more")
+                    else:
+                        logeer.info("All matches loaded")
+                except Exception as e:
+                    logger.error(f"Error with clicking into button")
+                    break
+                    
+                    
+        #TODO: add logic for click for more matches and 
         #               get every one match to get data about them 
         
         await asyncio.sleep(3)
