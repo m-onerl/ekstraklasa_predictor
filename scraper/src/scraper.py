@@ -44,23 +44,29 @@ async def test_basic_scraper():
                 logger.info(f"{i+1}. {text.strip()} -> {href}")
                 
         logger.info(f"Total found seasons: {len(seasons_data)}")
-        
-        # list comprahension to get link from season data
+
         res = [d.get('href') for d in seasons_data if 'href' in d]
         
         for link in res:
             await page.goto(link, wait_until="networkidle")
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
             
             while True:
+                if len(page.context.pages) > 1:
+                    for extra_page in page.context.pages[1:]:
+                        await extra_page.close()
+                    logger.info("Closed add")
                 try:
-                    show_more = await page.query_selector(".wcl-bold_NZXv6.wcl-scores-caption-05_Z8Ux-.wcl-scores_Na715")
+                    show_more = await page.query_selector('//*[@id="live-table"]/div[1]/div/div/a')
                     if show_more:
+                        await asyncio.sleep(0.5)
                         await show_more.click()
-                        await asyncio.sleep(1)
+                        await asyncio.sleep(1.5)
                         logger.info("Founded button to show more")
                     else:
-                        logeer.info("All matches loaded")
+                        logger.info("All matches loaded")
+                        break
+                    
                 except Exception as e:
                     logger.error(f"Error with clicking into button")
                     break
