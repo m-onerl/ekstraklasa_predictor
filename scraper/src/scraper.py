@@ -86,15 +86,12 @@ class Scraper:
                 # found match links and extract hrefs immediately
                 match_elements = await page.query_selector_all('.eventRowLink')
                 logger.info(f'Founded {len(match_elements)} matches')
-                
-                # Extract all hrefs before navigating
+
                 match_urls = []
                 
                 for match in match_elements:
-                    try:
-                        
+                    try:  
                         href = await match.get_attribute('href')
-                        
                         if href:
                             match_href = href
                             match_urls.append(match_href)
@@ -102,36 +99,30 @@ class Scraper:
                     except Exception as e:
                         logger.error(f"Error extracting href: {e}")
                 
-                # Now navigate to each match
+                # now navigate to each match
                 for i, match_href in enumerate(match_urls, 1):
-                    # Limit to first 3 matches for testing
-                    if i > 3:
-                        break
-                    
+                    match_page = None
                     try:
-                        logger.info(f"Loading match {i}/{len(match_urls)}: {match_href}")
-                        
-                        # Check page status before navigation
-                        logger.info(f"Page closed? {page.is_closed()}")
-                        
-                        await page.goto(match_href, wait_until = "domcontentloaded", timeout=30000)
-                        await asyncio.sleep(1)
+                        logger.info(f"Loading match {i}/{len(match_urls)}")
+
+                        match_page = await browser.new_page()
+                        await match_page.goto(match_href, wait_until="domcontentloaded", timeout=30000)
+                        await asyncio.sleep(0.5)
                         
                         logger.info(f"Successfully loaded match {i}")
-                        # TODO: Extract match data here
+                        # TODO: Extract match data from match_page
 
-                        logger.info(f"Go back")
-                        await page.go_back(wait_until="domcontentloaded")
-                        await asyncio.sleep(0.5)
-                        logger.info(f"Back successful")
+                        await match_page.close()
+                        logger.info(f"Match {i} complete")
                         
                     except Exception as e:
                         logger.error(f"Error loading match {i}: {str(e)}")
-                        try:
-                            await page.go_back()
-                        except:
-                            pass
+                        if match_page and not match_page.is_closed():
+                            try:
+                                await match_page.close()
+                            except:
+                                pass
                         continue
-        
+                    
 if __name__ == "__main__":
     asyncio.run(Scraper.scraper())
