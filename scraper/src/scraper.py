@@ -92,21 +92,22 @@ class Scraper:
                 
                 # Now navigate to each match
                 for match_href in match_urls:
+                    
                     try:
                         await page.goto(match_href, wait_until = "domcontentloaded")
                         await asyncio.sleep(1)
                         # TODO: Extract match data here
+
+                        await asyncio.sleep(3)
+                        await browser.close()
+                        
                     except Exception as e:
                         logger.error(f"Error loading match: {e}")
-                        
-                #TODO: add go into match and get every data what i want and keep that into dict
-                # from dict into database
-                
-                #await page.goto(match, wait_until = "contentloaded")
-                        
-            
-            await asyncio.sleep(3)
-            await browser.close()
+                        try:
+                            await page.go_back()
+                        except:
+                            pass
+                        continue
         
 if __name__ == "__main__":
     asyncio.run(Scraper.scraper())
