@@ -11,16 +11,18 @@ logging.basicConfig(
 class Scraper:
     async def scraper():
 
-        
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless = False)  
             page = await browser.new_page()
-
+        
+                    
             url = "https://www.flashscore.pl/pilka-nozna/polska/pko-bp-ekstraklasa/archiwum/"
             logger.info(f"Navigating to: {url}")
             # go to scrap page
+            
             await page.goto(url, wait_until = "networkidle")
             await asyncio.sleep(2)
+            
             # get for every one season links
             season_links = await page.query_selector_all(".archiveLatte__season")
             logger.info(f"Found out {len(season_links)} seasons")
@@ -52,22 +54,28 @@ class Scraper:
             res = [d.get('href') for d in seasons_data if 'href' in d]
             
             for link in res:
+                
                 await page.goto(link, wait_until = "networkidle")
                 await asyncio.sleep(1)
+                
                 # exit extra pages like adds pages
                 while True:
+                    
                     if len(page.context.pages) > 1:
                         for extra_page in page.context.pages[1:]:
                             await extra_page.close()
                         logger.info("Closed add")
+                        
                     # found out button to show more matches 
                     try:
                         show_more = await page.query_selector('//*[@id="live-table"]/div[1]/div/div/a')
+                        
                         if show_more:
                             await asyncio.sleep(0.5)
                             await show_more.click()
                             await asyncio.sleep(1.5)
                             logger.info("Founded button to show more")
+                            
                         else:
                             logger.info("All matches loaded")
                             break
@@ -81,28 +89,44 @@ class Scraper:
                 
                 # Extract all hrefs before navigating
                 match_urls = []
+                
                 for match in match_elements:
                     try:
+                        
                         href = await match.get_attribute('href')
+                        
                         if href:
                             match_href = href
                             match_urls.append(match_href)
+                            
                     except Exception as e:
                         logger.error(f"Error extracting href: {e}")
                 
                 # Now navigate to each match
-                for match_href in match_urls:
+                for i, match_href in enumerate(match_urls, 1):
+                    # Limit to first 3 matches for testing
+                    if i > 3:
+                        break
                     
                     try:
-                        await page.goto(match_href, wait_until = "domcontentloaded")
+                        logger.info(f"Loading match {i}/{len(match_urls)}: {match_href}")
+                        
+                        # Check page status before navigation
+                        logger.info(f"Page closed? {page.is_closed()}")
+                        
+                        await page.goto(match_href, wait_until = "domcontentloaded", timeout=30000)
                         await asyncio.sleep(1)
+                        
+                        logger.info(f"Successfully loaded match {i}")
                         # TODO: Extract match data here
 
-                        await asyncio.sleep(3)
-                        await browser.close()
+                        logger.info(f"Go back")
+                        await page.go_back(wait_until="domcontentloaded")
+                        await asyncio.sleep(0.5)
+                        logger.info(f"Back successful")
                         
                     except Exception as e:
-                        logger.error(f"Error loading match: {e}")
+                        logger.error(f"Error loading match {i}: {str(e)}")
                         try:
                             await page.go_back()
                         except:
