@@ -39,7 +39,8 @@ class Scraper:
             if status_element:
                 match_data['status'] = (await status_element.inner_text()).strip()
             
-            # get basic statistic there will be more TODO: get into tab and get more specific stats
+            # get basic statistic there will be more 
+            # TODO: get into tab and get more specific stats add to match endpoint (/szczegoly/statystyki but its between two other endpoint have to geet some idea how to make it)
             stats = {}
             stat_rows = await match_page.query_selector_all('[data-testid="wcl-statistics"]')
             
