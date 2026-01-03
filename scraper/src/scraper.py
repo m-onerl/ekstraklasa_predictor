@@ -39,11 +39,20 @@ class Scraper:
             status_element = await match_page.query_selector('.fixedHeaderDuel__detailStatus')
             if status_element:
                 match_data['status'] = (await status_element.inner_text()).strip()
-            
+            try:
+                # look for the statistics tab link
+                stats_tab = await match_page.query_selector('a[href*="szczegoly/statystyki"]')
+                if stats_tab:
+                    await stats_tab.click()
+                    await asyncio.sleep(1)
+                    
+                    # now scrape detailed statistics
+                    detailed_stats = await Scraper.extract_detailed_statistics(match_page)
+                    match_data['detailed_statistics'] = detailed_stats
+            except Exception as e:
+                logger.error(f"Error navigating to statistics tab: {e}")
+                
             # get basic statistic there will be more 
-            # TODO: get into tab and get more specific stats add to match endpoint (/szczegoly/statystyki but its between two other endpoint have to geet some idea how to make it)
-            stats = {}
-            stat_rows = await match_page.query_selector_all('[data-testid="wcl-statistics"]')
             
             for stat_row in stat_rows:
                 # geted category name
