@@ -11,6 +11,32 @@ logging.basicConfig(
 class Scraper:
     
     @staticmethod
+    async def extract_detailed_statistics(match_page):
+        """Extract detailed statistics from the statistics tab"""
+        detailed_stats = {}
+        try:
+            stat_rows = await match_page.query_selector_all('[data-testid="wcl-statistics"]')
+            
+            for stat_row in stat_rows:
+                category_element = await stat_row.query_selector('[data-testid="wcl-statistics-category"]')
+                if category_element:
+                    category = (await category_element.inner_text()).strip()
+                    
+                    value_elements = await stat_row.query_selector_all('[data-testid="wcl-statistics-value"]')
+                    if len(value_elements) >= 2:
+                        home_value = (await value_elements[0].inner_text()).strip()
+                        away_value = (await value_elements[1].inner_text()).strip()
+                        
+                        detailed_stats[category] = {
+                            'home': home_value,
+                            'away': away_value
+                        }
+        except Exception as e:
+            logger.error(f"Error extracting detailed statistics: {e}")
+        
+        return detailed_stats
+    
+    @staticmethod
     async def extract_match_data(match_page):
         match_data = {}
         
@@ -52,7 +78,9 @@ class Scraper:
             except Exception as e:
                 logger.error(f"Error navigating to statistics tab: {e}")
                 
-            # get basic statistic there will be more 
+            # get basic statistics there will be more
+            stats = {}
+            stat_rows = await match_page.query_selector_all('[data-testid="wcl-statistics"]')
             
             for stat_row in stat_rows:
                 # geted category name
