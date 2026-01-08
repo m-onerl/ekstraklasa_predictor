@@ -1,0 +1,25 @@
+import logging
+from psycopg import connect
+from psycopg.rows import dict_row
+import json
+from .db_connect import CONNECTION_INFO
+
+logger = logging.getLogger(__name__)
+
+class DatabaseOperations:
+    
+    @staticmethod
+    def get_or_create_team(cur, team_name):
+        
+        if not team_name:
+            return None
+        
+        cur.execute("SELECT team_id from teams WHERE name = %s", (team_name,))
+        result = cur.fetchone()
+        
+        if result:
+            return result[0]
+        
+        cur.execute("INSERT INTO teams (name) VALUES (%s) RETURNING team_id", (team_name,))
+        return cur.fetchone()[0]
+    

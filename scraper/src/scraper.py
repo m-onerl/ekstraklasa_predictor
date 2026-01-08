@@ -49,9 +49,6 @@ class Scraper:
                                         'home': home_value,
                                         'away': away_value
                                     }
-                        
-
-         
         except Exception as e:
             logger.error(f"Error extracting detailed statistics: {e}")
         
@@ -262,8 +259,7 @@ class Scraper:
                         # add data to list
                         all_matches_data.append(match_data)
                         logger.info(f"Added match data to list. Total matches: {len(all_matches_data)}")
-                        print(all_matches_data)
-                        
+
                         await match_page.close()
                         logger.info(f"Match {i} complete")
                         
