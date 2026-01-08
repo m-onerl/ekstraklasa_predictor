@@ -16,7 +16,7 @@ class Scraper:
         detailed_stats = {}
         try:
             # find the sectionsWrapper that contains all statistics sections
-            sections_wrapper = await match_page.query_selector('.sectionsWrapper')
+            sections_wrapper = await match_page.query_selector('.//*[@id="detail"]/div[4]/div[2]/div[2]')
             
             if sections_wrapper:
                 # get all sections within the wrapper
@@ -50,6 +50,7 @@ class Scraper:
                                         'away': away_value
                                     }
                         
+
          
         except Exception as e:
             logger.error(f"Error extracting detailed statistics: {e}")
