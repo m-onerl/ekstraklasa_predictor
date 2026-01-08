@@ -15,22 +15,44 @@ class Scraper:
         """Extract detailed statistics from the statistics tab"""
         detailed_stats = {}
         try:
-            stat_rows = await match_page.query_selector_all('[data-testid="wcl-statistics"]')
+            # find the sectionsWrapper that contains all statistics sections
+            sections_wrapper = await match_page.query_selector('.sectionsWrapper')
             
-            for stat_row in stat_rows:
-                category_element = await stat_row.query_selector('[data-testid="wcl-statistics-category"]')
-                if category_element:
-                    category = (await category_element.inner_text()).strip()
-                    
-                    value_elements = await stat_row.query_selector_all('[data-testid="wcl-statistics-value"]')
-                    if len(value_elements) >= 2:
-                        home_value = (await value_elements[0].inner_text()).strip()
-                        away_value = (await value_elements[1].inner_text()).strip()
+            if sections_wrapper:
+                # get all sections within the wrapper
+                sections = await sections_wrapper.query_selector_all('.section')
+                logger.info(f"Found {len(sections)} statistics sections")
+                
+                for section in sections:
+                    # get section header/title
+                    section_header = await section.query_selector('.section__title')
+                    if section_header:
+                        section_title = (await section_header.inner_text()).strip()
+                        logger.info(f"Processing section: {section_title}")
                         
-                        detailed_stats[category] = {
-                            'home': home_value,
-                            'away': away_value
-                        }
+                        # initialize dict for this section
+                        detailed_stats[section_title] = {}
+                        
+                        # get all stat rows within this section
+                        stat_rows = await section.query_selector_all('[data-testid="wcl-statistics"]')
+                        
+                        for stat_row in stat_rows:
+                            category_element = await stat_row.query_selector('[data-testid="wcl-statistics-category"]')
+                            if category_element:
+                                category = (await category_element.inner_text()).strip()
+                                
+                                value_elements = await stat_row.query_selector_all('[data-testid="wcl-statistics-value"]')
+                                if len(value_elements) >= 2:
+                                    home_value = (await value_elements[0].inner_text()).strip()
+                                    away_value = (await value_elements[1].inner_text()).strip()
+                                    
+                                    detailed_stats[section_title][category] = {
+                                        'home': home_value,
+                                        'away': away_value
+                                    }
+                        
+                        logger.info(f"Extracted {len(detailed_stats[section_title])} stats from {section_title}")
+         
         except Exception as e:
             logger.error(f"Error extracting detailed statistics: {e}")
         
@@ -241,7 +263,8 @@ class Scraper:
                         # add data to list
                         all_matches_data.append(match_data)
                         logger.info(f"Added match data to list. Total matches: {len(all_matches_data)}")
-
+                        print(all_matches_data)
+                        
                         await match_page.close()
                         logger.info(f"Match {i} complete")
                         
