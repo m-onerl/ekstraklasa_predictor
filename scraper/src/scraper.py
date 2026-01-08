@@ -16,7 +16,7 @@ class Scraper:
         detailed_stats = {}
         try:
             # find the sectionsWrapper that contains all statistics sections
-            sections_wrapper = await match_page.query_selector('.//*[@id="detail"]/div[4]/div[2]/div[2]')
+            sections_wrapper = await match_page.query_selector('.sectionsWrapper')
             
             if sections_wrapper:
                 # get all sections within the wrapper
@@ -28,7 +28,6 @@ class Scraper:
                     section_header = await section.query_selector('.section__title')
                     if section_header:
                         section_title = (await section_header.inner_text()).strip()
-                        logger.info(f"Processing section: {section_title}")
                         
                         # initialize dict for this section
                         detailed_stats[section_title] = {}
@@ -51,7 +50,6 @@ class Scraper:
                                         'away': away_value
                                     }
                         
-                        logger.info(f"Extracted {len(detailed_stats[section_title])} stats from {section_title}")
          
         except Exception as e:
             logger.error(f"Error extracting detailed statistics: {e}")
@@ -96,7 +94,7 @@ class Scraper:
                     
                     # now scrape detailed statistics
                     detailed_stats = await Scraper.extract_detailed_statistics(match_page)
-                    match_data['detailed_statistics'] = detailed_stats
+
             except Exception as e:
                 logger.error(f"Error navigating to statistics tab: {e}")
                 
