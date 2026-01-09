@@ -16,8 +16,9 @@ class Scraper:
         detailed_stats = {}
         try:
             # find the sectionsWrapper that contains all statistics sections
-            sections_wrapper = await match_page.query_selector('.//*[@id="detail"]/div[4]/div[2]/div[2]')
+            sections_wrapper = await match_page.query_selector('.sectionsWrapper')
             
+            logger.info(f"sections_wrapper found: {sections_wrapper is not None}")
             if sections_wrapper:
                 # get all sections within the wrapper
                 sections = await sections_wrapper.query_selector_all('.section')
@@ -78,24 +79,7 @@ class Scraper:
                 if len(score_spans) >= 3:
                     match_data['home_score'] = (await score_spans[0].inner_text()).strip()
                     match_data['away_score'] = (await score_spans[2].inner_text()).strip()
-            
-            # get match status
-            status_element = await match_page.query_selector('.fixedHeaderDuel__detailStatus')
-            if status_element:
-                match_data['status'] = (await status_element.inner_text()).strip()
-            try:
-                # look for the statistics tab link
-                stats_tab = await match_page.query_selector('a[href*="szczegoly/statystyki"]')
-                if stats_tab:
-                    await stats_tab.click()
-                    await asyncio.sleep(1)
                     
-                    # now scrape detailed statistics
-                    detailed_stats = await Scraper.extract_detailed_statistics(match_page)
-
-            except Exception as e:
-                logger.error(f"Error navigating to statistics tab: {e}")
-                
             # get basic statistics there will be more
             stats = {}
             stat_rows = await match_page.query_selector_all('[data-testid="wcl-statistics"]')
@@ -119,27 +103,71 @@ class Scraper:
             
             match_data['statistics'] = stats
             
-            # get reffere name 
-            referee_wrapper = await match_page.query_selector('.wcl-summaryMatchInformation_U4gpU')
-            if referee_wrapper:
-                info_values = await referee_wrapper.query_selector_all('.wcl-infoValue_grawU')
-                info_labels = await referee_wrapper.query_selector_all('.wcl-infoLabel_xPJVi')
+            await asyncio.sleep(0.5)
+            
+            # get reffere and stadium
+            match_info = await match_page.query_selector('.wcl-content_Vkmj9')
+
+            if match_info:
+                logger.info("Found match_info")
+                info_values = await match_info.query_selector_all('.wcl-infoValue_grawU')
+                info_labels = await match_info.query_selector_all('.wcl-infoLabelWrapper_DXbvw')
                 
                 for i, label_element in enumerate(info_labels):
                     label = (await label_element.inner_text()).strip()
-                    
+
                     if i < len(info_values):
-                        value = (await info_values[i].inner_text()).strip()
+                        value_element = info_values[i]  # Get the element, not the text
                         
-                        if 'Sędzia' in label or 'Sedzia' in label:
-                            match_data['referee'] = value
-                        elif 'Stadion' in label:
-                            match_data['stadium'] = value
-                        elif 'Pojemność' in label or 'Pojemnosc' in label:
-                            match_data['capacity'] = value
-                        elif 'Frekwencja' in label:
-                            match_data['attendance'] = value
-            
+                        if 'sędzia' in label.lower() or 'sedzia' in label.lower():
+                            # Get all spans inside this value element
+                            spans = await value_element.query_selector_all('span')
+                            if len(spans) >= 1:
+                                match_data['referee_name'] = (await spans[0].inner_text()).strip()
+                            if len(spans) >= 2:
+                                nationality = (await spans[1].inner_text()).strip()
+                                match_data['referee_nationality'] = nationality.replace('(', '').replace(')', '').strip()
+                                
+                        elif 'stadion' in label.lower():
+                            # Get all spans inside this value element
+                            spans = await value_element.query_selector_all('span')
+                            if len(spans) >= 1:
+                                match_data['stadium_name'] = (await spans[0].inner_text()).strip()
+                            if len(spans) >= 2:
+                                city = (await spans[1].inner_text()).strip()
+                                match_data['stadium_city'] = city.replace('(', '').replace(')', '').strip()
+                                
+                        elif 'pojemność' in label.lower() or 'pojemnosc' in label.lower():
+                            match_data['capacity'] = (await value_element.inner_text()).strip()
+                            
+                        elif 'frekwencja' in label.lower():
+                            match_data['attendance'] = (await value_element.inner_text()).strip()
+            else:
+                logger.info("referee_wrapper NOT found")
+                
+            # get match status
+            status_element = await match_page.query_selector('.fixedHeaderDuel__detailStatus')
+            if status_element:
+                match_data['status'] = (await status_element.inner_text()).strip()
+            try:
+                # look for the statistics tab link
+                stats_tab = await match_page.query_selector('a[href*="szczegoly/statystyki"]')
+                if stats_tab:
+                    await stats_tab.click()
+                    try:
+                        await match_page.wait_for_selector('.sectionsWrapper', timeout = 5000)
+                    except:
+                        logger.info("sectionWrapper did not appear in time")
+                        
+                    # now scrape detailed statistics
+                    detailed_stats = await Scraper.extract_detailed_statistics(match_page)
+                    logger.info("Clicked stats tab, now extracting detailed stats")
+                    
+                    match_data['detailed_statistic'] = detailed_stats
+                    
+            except Exception as e:
+                logger.error(f"Error navigating to statistics tab: {e}")
+                
             logger.info(f"Extracted data for {match_data.get('home_team', 'Unknown')} vs {match_data.get('away_team', 'Unknown')}")
             
         except Exception as e:
@@ -259,7 +287,7 @@ class Scraper:
                         # add data to list
                         all_matches_data.append(match_data)
                         logger.info(f"Added match data to list. Total matches: {len(all_matches_data)}")
-
+                        logger.info(f"Stuff : {all_matches_data}")
                         await match_page.close()
                         logger.info(f"Match {i} complete")
                         
