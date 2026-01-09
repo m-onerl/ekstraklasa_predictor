@@ -10,7 +10,6 @@ class DatabaseOperations:
     
     @staticmethod
     def get_or_create_team(cur, team_name):
-        
         if not team_name:
             return None
         
@@ -24,13 +23,23 @@ class DatabaseOperations:
         return cur.fetchone()[0]
     
     @staticmethod
-    def get_or_create_referee(cur, name, nationality):
+    def get_or_create_referee(cur, referee_name, nationality):   
+        if not referee_name:
+            return None 
         
-        pass
+        cur.execute("SELECT referee_id FROM referees WHERE name = %s AND nationality = %s", (referee_name, nationality))
+        result = cur.fetchone()
+        
+        if result:
+            return result[0]
+        
+        cur.execute("INSERT INTO referees (name, nationality) VALUES (%s, %s) RETURNING referee_id", (referee_name, nationality))
+        return cur.fetchone()[0]
 
     @staticmethod
-    def get_or_create_stadium(cur, name, place):
-        
+    def get_or_create_stadium(cur, stadium_name, place):
+        if not stadium_name and place:
+            return None 
         pass
     
     @staticmethod
