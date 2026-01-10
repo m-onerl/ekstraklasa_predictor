@@ -89,5 +89,35 @@ class DatabaseOperations:
             match_data.get('attendance'),
             match_data.get('url')
         ))
-    
+        
+        match_id = cur.fetchone()[0]
+        
+        all_stats = {}
+        
+        #add basic statistics
+        if 'statistics' in match_data:
+            for category, values in match_data['statistics'].items():
+                all_stats[category] = values
+        
+        # add detailed statistics
+        if 'detailed_statistic' in match_data:
+            for section, stats in match_data['detailed_statistic'].items():
+                for category, values in stats.items():
+                    full_category = f"{section} - {category}"
+                    all_stats[full_category] = values
+        
+        # insert  statistics into database
+        for category, values in all_stats.items():
+            cur.execute("""
+                INSERT INTO match_statistics (
+                    match_id, statistic_name, home_value, away_value
+                ) VALUES (%s, %s, %s, %s)
+            """, (
+                match_id,
+                category,
+                values.get('home'),
+                values.get('away')
+            ))
+        
+        return match_id
     
