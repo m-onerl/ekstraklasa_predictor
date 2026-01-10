@@ -13,7 +13,7 @@ class DatabaseOperations:
         if not team_name:
             return None
         
-        cur.execute("SELECT team_id from teams WHERE name = %s", (team_name,))
+        cur.execute("SELECT team_id FROM teams WHERE name = %s", (team_name,))
         result = cur.fetchone()
         
         if result:
@@ -38,10 +38,15 @@ class DatabaseOperations:
 
     @staticmethod
     def get_or_create_stadium(cur, stadium_name, place):
-        if not stadium_name and place:
+        if not stadium_name:
             return None 
-        pass
+        
+        cur.execute("SELECT stadium_id FROM stadiums WHERE name = %s AND city = %s", (stadium_name, place))
+        result = cur.fetchone()
+        
+        if result:
+            return result[0]
+        
+        cur.execute("INSERT INTO stadiums (name, city) VALUES (%s, %s) RETURNING stadium_id", (stadium_name, place))
+        return cur.fetchone()[0]
     
-    @staticmethod
-    def instert_match_data(match_data):
-        pass
