@@ -11,18 +11,30 @@ logging.basicConfig(
 class Scraper:
     
     @staticmethod
-    async def extract_detailed_statistics(match_page):
-        """Extract detailed statistics from the statistics tab"""
+    async def extract_detailed_statistics(match_page, max_retries=3):
         detailed_stats = {}
-        try:
-            # find the sectionsWrapper that contains all statistics sections
-            sections_wrapper = await match_page.query_selector('.sectionsWrapper')
-            
-            logger.info(f"sections_wrapper found: {sections_wrapper is not None}")
-            if sections_wrapper:
+        
+        for attempt in range(max_retries):
+            try:
+                # Wait before attempting extraction
+                await asyncio.sleep(0.5 + attempt * 0.5)
+                
+                # find the sectionsWrapper that contains all statistics sections
+                sections_wrapper = await match_page.query_selector('.sectionsWrapper')
+                
+                if not sections_wrapper:
+                    logger.info(f"Attempt {attempt + 1}: sectionsWrapper not found, retrying...")
+                    continue
+                    
+                logger.info(f"Attempt {attempt + 1}: sections_wrapper found")
+                
                 # get all sections within the wrapper
                 sections = await sections_wrapper.query_selector_all('.section')
                 logger.info(f"Found {len(sections)} statistics sections")
+                
+                if len(sections) == 0:
+                    logger.info(f"Attempt {attempt + 1}: No sections found, retrying...")
+                    continue
                 
                 for section in sections:
                     # get section header/title
@@ -50,8 +62,16 @@ class Scraper:
                                         'home': home_value,
                                         'away': away_value
                                     }
-        except Exception as e:
-            logger.error(f"Error extracting detailed statistics: {e}")
+                
+                # If we got data, break out of retry loop
+                if detailed_stats:
+                    logger.info(f"Successfully extracted {len(detailed_stats)} sections")
+                    break
+                    
+            except Exception as e:
+                logger.error(f"Attempt {attempt + 1} error extracting detailed statistics: {e}")
+                if attempt == max_retries - 1:
+                    logger.error("All retry attempts failed")
         
         return detailed_stats
     
@@ -154,16 +174,24 @@ class Scraper:
                 stats_tab = await match_page.query_selector('a[href*="szczegoly/statystyki"]')
                 if stats_tab:
                     await stats_tab.click()
+                    logger.info("Clicked statistics tab")
+                    
+                    # wait for page load
+                    await asyncio.sleep(1.5)
+                    
                     try:
-                        await match_page.wait_for_selector('.sectionsWrapper', timeout = 5000)
+                        await match_page.wait_for_selector('.sectionsWrapper', timeout=8000)
+                        logger.info("sectionsWrapper appeared")
                     except:
-                        logger.info("sectionWrapper did not appear in time")
+                        logger.warning("sectionsWrapper did not appear in time, will retry in extraction")
                         
-                    # now scrape detailed statistics
+                    # now scrape detailed statistics with retry logic
                     detailed_stats = await Scraper.extract_detailed_statistics(match_page)
-                    logger.info("Clicked stats tab, now extracting detailed stats")
+                    logger.info(f"Extracted detailed stats: {len(detailed_stats)} sections")
                     
                     match_data['detailed_statistic'] = detailed_stats
+                else:
+                    logger.warning("Statistics tab link not found on this page")
                     
             except Exception as e:
                 logger.error(f"Error navigating to statistics tab: {e}")
