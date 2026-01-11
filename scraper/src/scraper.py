@@ -16,62 +16,54 @@ class Scraper:
         
         for attempt in range(max_retries):
             try:
-                # Wait before attempting extraction
-                await asyncio.sleep(0.5 + attempt * 0.5)
-                
-                # find the sectionsWrapper that contains all statistics sections
-                sections_wrapper = await match_page.query_selector('.sectionsWrapper')
+                # wait before attempting extraction
+                await asyncio.sleep(1 + attempt * 0.5)
+                sections_wrapper = await match_page.query_selector('div[class*="sectionsWrapper"]')
                 
                 if not sections_wrapper:
-                    logger.info(f"Attempt {attempt + 1}: sectionsWrapper not found, retrying...")
-                    continue
+                    sections = await match_page.query_selector_all('.section')
+                    if sections and len(sections) > 0:
+                        if detailed_stats:
+                            break
+                    else:
+                        logger.info(f"Attempt {attempt + 1}: sectionsWrapper and sections not found")
+                        continue
+                else:
+                    logger.info(f"Attempt {attempt + 1}: sections_wrapper found")
                     
-                logger.info(f"Attempt {attempt + 1}: sections_wrapper found")
-                
-                # get all sections within the wrapper
-                sections = await sections_wrapper.query_selector_all('.section')
-                logger.info(f"Found {len(sections)} statistics sections")
-                
-                if len(sections) == 0:
-                    logger.info(f"Attempt {attempt + 1}: No sections found, retrying...")
-                    continue
-                
-                for section in sections:
-                    # get section header/title
-                    section_header = await section.query_selector('.section__title')
-                    if section_header:
-                        section_title = (await section_header.inner_text()).strip()
-                        
-                        # initialize dict for this section
-                        detailed_stats[section_title] = {}
-                        
-                        # get all stat rows within this section
-                        stat_rows = await section.query_selector_all('[data-testid="wcl-statistics"]')
-                        
-                        for stat_row in stat_rows:
-                            category_element = await stat_row.query_selector('[data-testid="wcl-statistics-category"]')
-                            if category_element:
-                                category = (await category_element.inner_text()).strip()
-                                
-                                value_elements = await stat_row.query_selector_all('[data-testid="wcl-statistics-value"]')
-                                if len(value_elements) >= 2:
-                                    home_value = (await value_elements[0].inner_text()).strip()
-                                    away_value = (await value_elements[1].inner_text()).strip()
-                                    
-                                    detailed_stats[section_title][category] = {
-                                        'home': home_value,
-                                        'away': away_value
-                                    }
-                
-                # If we got data, break out of retry loop
-                if detailed_stats:
-                    logger.info(f"Successfully extracted {len(detailed_stats)} sections")
-                    break
+                    sections = await sections_wrapper.query_selector_all('.section')
+                    logger.info(f"Found {len(sections)} statistics sections")
+                    
+                    if len(sections) == 0:
+                        logger.info(f"Attempt {attempt + 1}: No sections found, retrying")
+                        continue
+                    
+                    for section in sections:
+                        section_header = await section.query_selector('.section__title')
+                        if section_header:
+                            section_title = (await section_header.inner_text()).strip()
+                            detailed_stats[section_title] = {}
+                            
+                            stat_rows = await section.query_selector_all('[data-testid="wcl-statistics"]')
+                            for stat_row in stat_rows:
+                                category_element = await stat_row.query_selector('[data-testid="wcl-statistics-category"]')
+                                if category_element:
+                                    category = (await category_element.inner_text()).strip()
+                                    value_elements = await stat_row.query_selector_all('[data-testid="wcl-statistics-value"]')
+                                    if len(value_elements) >= 2:
+                                        home_value = (await value_elements[0].inner_text()).strip()
+                                        away_value = (await value_elements[1].inner_text()).strip()
+                                        detailed_stats[section_title][category] = {
+                                            'home': home_value,
+                                            'away': away_value
+                                        }
+                    
+                    if detailed_stats:
+                        logger.info(f"Successfully extracted {len(detailed_stats)} sections")
+                        break
                     
             except Exception as e:
-                logger.error(f"Attempt {attempt + 1} error extracting detailed statistics: {e}")
-                if attempt == max_retries - 1:
-                    logger.error("All retry attempts failed")
+                logger.error(f"Attempt error extracting detailed statistics: {e}")
         
         return detailed_stats
     
@@ -170,26 +162,30 @@ class Scraper:
             if status_element:
                 match_data['status'] = (await status_element.inner_text()).strip()
             try:
-                # look for the statistics tab link
+                # Get the statistics tab URL and navigate directly
                 stats_tab = await match_page.query_selector('a[href*="szczegoly/statystyki"]')
                 if stats_tab:
-                    await stats_tab.click()
-                    logger.info("Clicked statistics tab")
-                    
-                    # wait for page load
-                    await asyncio.sleep(1.5)
-                    
-                    try:
-                        await match_page.wait_for_selector('.sectionsWrapper', timeout=8000)
-                        logger.info("sectionsWrapper appeared")
-                    except:
-                        logger.warning("sectionsWrapper did not appear in time, will retry in extraction")
+                    stats_href = await stats_tab.get_attribute('href')
+                    if stats_href:
+                        # Navigate directly to statistics page instead of clicking
+                        stats_url = stats_href if stats_href.startswith('http') else f"https://www.flashscore.pl{stats_href}"
+                        logger.info(f"Navigating to statistics: {stats_url}")
+                        await match_page.goto(stats_url, wait_until="domcontentloaded", timeout=15000)
                         
-                    # now scrape detailed statistics with retry logic
-                    detailed_stats = await Scraper.extract_detailed_statistics(match_page)
-                    logger.info(f"Extracted detailed stats: {len(detailed_stats)} sections")
-                    
-                    match_data['detailed_statistic'] = detailed_stats
+                        # Wait for content to load
+                        await asyncio.sleep(2)
+                        
+                        try:
+                            await match_page.wait_for_selector('[data-testid="wcl-statistics"]', timeout=8000)
+                            logger.info("Statistics elements appeared")
+                        except:
+                            logger.warning("Statistics elements did not appear in time")
+                        
+                        # now scrape detailed statistics with retry logic
+                        detailed_stats = await Scraper.extract_detailed_statistics(match_page)
+                        logger.info(f"Extracted detailed stats: {len(detailed_stats)} sections")
+                        
+                        match_data['detailed_statistic'] = detailed_stats
                 else:
                     logger.warning("Statistics tab link not found on this page")
                     
