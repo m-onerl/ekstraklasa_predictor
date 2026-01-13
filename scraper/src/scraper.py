@@ -216,7 +216,7 @@ class Scraper:
                 with conn.cursor() as cur:
                     for match_data in season_matches:
                         try:
-                            DatabaseOperation.insert_match_data(cur,match_data)
+                            DatabaseOperations.insert_match_data(cur,match_data)
                             saved_count += 1
                         except Exception as e:
                             logger.error(f"Error inserting match: {e}")
