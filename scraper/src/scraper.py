@@ -1,5 +1,6 @@
 
 import asyncio
+import gc
 from playwright.async_api import async_playwright
 import logging
 from database.src.db_queries import DatabaseOperations
@@ -355,7 +356,7 @@ class Scraper:
                 total_saved = saved
                 logger.info(f"Season {season_name} complete")
                 season_matches.clear()
-
+                gc.collect()
                 
             await browser.close()
             logger.info(f"Scraping completed matches collected : {len(season_matches)}")
