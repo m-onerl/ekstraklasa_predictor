@@ -2,6 +2,9 @@
 import asyncio
 from playwright.async_api import async_playwright
 import logging
+from database.src.db_queries import DatabaseOperations
+from database.src.db_connect import CONNECTION_INFO
+from psycopg import connect
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -199,12 +202,33 @@ class Scraper:
         
         return match_data
         
-    async def scraper():
+    @staticmethod
+    def save_season_to_database(season_matches, season_name):
+        """Save all matches from one season into database"""
+        if not season_matches:
+            logger.warning(f"No matches to save for season {season_name}")
+            return 0
         
-        all_matches_data = []
-
+        saved_count = 0
+        try:
+            with connect(CONNECTION_INFO) as conn:
+                with conn.cursor() as cur:
+                    for match_data in season_matches:
+                        try:
+                            DatabaseOperation.insert_match_data(cur,match_data)
+                            saved_count += 1
+                        except Exception as e:
+                            logger.error(f"Error inserting match: {e}")
+                            continue
+                    conn.commit()
+            logger.info(f"Saved {saved_count}/{len(season_matches)} season for season {season_name}")
+        except Exception as e:
+            logger.error(f"Dtabase error for season {season_name}")
+        return saved_count                    
+    
+    async def scraper():
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless = False)  
+            browser = await p.chromium.launch(headless = True)  
             page = await browser.new_page()
         
                     
@@ -245,7 +269,11 @@ class Scraper:
 
             res = [d.get('href') for d in seasons_data if 'href' in d]
             
-            for link in res:
+            
+            for season_idx, link in enumerate(res):
+                season_matches = []
+                season_name = seasons_data[season_idx].get('text', f'Season {season_idx}')
+                logger.info(f"Starting season: {season_name}")
                 
                 await page.goto(link, wait_until = "networkidle")
                 await asyncio.sleep(1)
@@ -309,9 +337,9 @@ class Scraper:
                         match_data['match_id'] = match_href.split('/')[-1] if '/' in match_href else match_href
                         
                         # add data to list
-                        all_matches_data.append(match_data)
-                        logger.info(f"Added match data to list. Total matches: {len(all_matches_data)}")
-                        logger.info(f"Stuff : {all_matches_data}")
+                        season_matches.append(match_data)
+                        match_data['season'] = season_name
+
                         await match_page.close()
                         logger.info(f"Match {i} complete")
                         
@@ -323,15 +351,16 @@ class Scraper:
                             except:
                                 pass
                         continue
-            
-            await browser.close()
-            logger.info(f"Scraping completed matches collected : {len(all_matches_data)}")
+                saved = Scraper.save_season_to_database(season_matches, season_name)
+                total_saved = saved
+                logger.info(f"Season {season_name} complete")
+                season_matches.clear()
 
-            if all_matches_data:
-                logger.info("Sample of match data:")
-                logger.info(all_matches_data[0])
+                
+            await browser.close()
+            logger.info(f"Scraping completed matches collected : {len(season_matches)}")
             
-            return all_matches_data
+            return total_saved
                     
 if __name__ == "__main__":
     asyncio.run(Scraper.scraper())
