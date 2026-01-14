@@ -93,8 +93,8 @@ class Scraper:
             away_team_element = await match_page.query_selector('.duelParticipant__away .participant__participantName a')
             if away_team_element:
                 match_data['away_team'] = (await away_team_element.inner_text()).strip()
-                score_wrapper = await match_page.query_selector('.detailScore__wrapper')
-                        
+
+            score_wrapper = await match_page.query_selector('.detailScore__wrapper')
             if score_wrapper:
                 score_spans = await score_wrapper.query_selector_all('span')
                 if len(score_spans) >= 3:
