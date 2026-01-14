@@ -212,7 +212,7 @@ class Scraper:
         
         saved_count = 0
         try:
-            with connect(CONNECTION_INFO) as conn:
+            with connect(CONNECTION_INFO) as conn: 
                 with conn.cursor() as cur:
                     for match_data in season_matches:
                         try:
