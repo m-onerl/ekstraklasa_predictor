@@ -8,7 +8,9 @@ import pytest
 import logging
 from playwright.async_api import async_playwright
 from scraper.src.scraper import Scraper
-
+from database.src.db_queries import DatabaseOperations
+from database.src.db_connect import CONNECTION_INFO
+from psycopg import connect
 
 logging.basicConfig(
     level=logging.INFO,
@@ -64,5 +66,23 @@ async def test_scrape_single_match():
 
             return match_data
                 
+        finally:
+            await browser.close()
+
+@pytest.mark.asyncio
+async def test_save_into_database():
+    logger.info(f"Starting test for save into database that match : {TEST_MATCH_URL}")
+    
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless = True)
+        
+        try:
+            match_page = await browser.new_page()
+            await match_page.goto(TEST_MATCH_URL, wait_until = 'networkidle', timeout = 30000 )
+            await match_page.wait_for_timeout(2000)
+
+            logger.info("Page loaded ")
+
+            
         finally:
             await browser.close()
