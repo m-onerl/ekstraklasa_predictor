@@ -70,10 +70,10 @@ class DatabaseOperations:
         
         cur.execute("""
             INSERT INTO matches (
-                match_external_id, home_team_id, away_team_id, 
-                home_score, away_score, match_date, status,
-                referee_id, stadium_id, capacity, attendance, url
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                match_id, home_team_id, away_team_id, 
+                home_score, away_score, date_time, status,
+                referee_id, stadium_id, attendance, url
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING match_id
         """, (
             match_data.get('match_id'),
@@ -85,7 +85,6 @@ class DatabaseOperations:
             match_data.get('status'),
             referee_id,
             stadium_id,
-            match_data.get('capacity'),
             match_data.get('attendance'),
             match_data.get('url')
         ))
