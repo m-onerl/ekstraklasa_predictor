@@ -82,7 +82,21 @@ async def test_save_into_database():
             await match_page.wait_for_timeout(2000)
 
             logger.info("Page loaded ")
-
+            
+            match_data = await Scraper.extract_match_data(match_page)
+            match_data['url'] = TEST_MATCH_URL
+            match_data['match_id'] = TEST_MATCH_URL.split('?mid=')[-1]
+            match_data['season'] = "Test Season"
+            
+            await match_page.close()
+            
+            logger.info(f"Extracted: {match_data.get('home_team', 'N/A')} vs {match_data.get('away_team', 'N/A')}")
+            logger.info(f"Score: {match_data.get('home_score', 'N/A')} - {match_data.get('away_score', 'N/A')}")
+            
+            with connect(CONNECTION_INFO) as conn:
+                with conn.cursor() as cur:
+                    DatabaseOperations.insert_match_data(cur, match_data)
+                    conn.commit()
             
         finally:
             await browser.close()
