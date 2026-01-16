@@ -93,10 +93,17 @@ async def test_save_into_database():
             logger.info(f"Extracted: {match_data.get('home_team', 'N/A')} vs {match_data.get('away_team', 'N/A')}")
             logger.info(f"Score: {match_data.get('home_score', 'N/A')} - {match_data.get('away_score', 'N/A')}")
             
+            test_match_id = match_data['match_id']
+            
             with connect(CONNECTION_INFO) as conn:
                 with conn.cursor() as cur:
+                    cur.execute("DELETE FROM match_statistics WHERE match_id = %s", (test_match_id,))
+                    cur.execute("DELETE FROM matches WHERE match_id = %s", (test_match_id,))
+                    
                     DatabaseOperations.insert_match_data(cur, match_data)
                     conn.commit()
+                    
+                    logger.info(f"Successfully saved match {test_match_id} to database")
             
         finally:
             await browser.close()
