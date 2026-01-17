@@ -8,6 +8,55 @@ logger = logging.getLogger(__name__)
 
 class DatabaseOperations:
     
+    #apping from polish to english column names
+    STATISTIC_TRANSLATIONS = {
+
+        'Oczekiwane gole (xG)': 'xg',
+        'Posiadanie piłki': 'ball_possession',
+        'Strzały łącznie': 'total_shots',
+        'Strzały na bramkę': 'shots_on_target',
+        'Wielkie szanse': 'big_chances',
+        'Rzuty rożne': 'corner_kicks',
+        'Podania': 'passes',
+        'Żółte kartki': 'yellow_cards',
+        'Czerwone kartki': 'red_cards',
+
+        'xG na bramkę (xGOT)': 'xgot',
+        'Strzały niecelne': 'shots_off_target',
+        'Strzały zablokowane': 'blocked_shots',
+        'Strzały z pola karnego': 'shots_inside_box',
+        'Strzały spoza pola karnego': 'shots_outside_box',
+        'Strzał w poprzeczkę': 'hit_woodwork',
+        'Bramki strzelone głową': 'headed_goals',
+
+        'Kontakty w polu karnym przeciwnika': 'touches_in_opponent_box',
+        'Celne podania prostopadłe': 'accurate_through_balls',
+        'Spalone': 'offsides',
+        'Rzuty wolne': 'free_kicks',
+
+        'Długie podania': 'long_balls',
+        'Podania w strefę obrony przeciwnika': 'passes_into_final_third',
+        'Dośrodkowania': 'crosses',
+        'Oczekiwane asysty (xA)': 'xa',
+        'Wrzuty z autu': 'throw_ins',
+
+        'Faule': 'fouls',
+        'Próby odbioru piłki': 'tackle_success',
+        'Wygrane pojedynki': 'duels_won',
+        'Wybicia': 'clearances',
+        'Przechwyty': 'interceptions',
+        'Błędy skutkujące strzałem': 'errors_leading_to_shot',
+        'Błędy skutkujące golem': 'errors_leading_to_goal',
+
+        'Obrony bramkarza': 'goalkeeper_saves',
+        'xGot przeciw': 'xgot_faced',
+        'Zapobiegnięcia utracie gola': 'prevented_goals',
+    }
+    
+    @staticmethod
+    def translate_statistic_name(polish_name):
+        return DatabaseOperations.STATISTIC_TRANSLATIONS.get(polish_name, polish_name.lower().replace(' ', '_'))
+    
     @staticmethod
     def get_or_create_team(cur, team_name):
         if not team_name:
@@ -52,7 +101,7 @@ class DatabaseOperations:
     
     @staticmethod
     def insert_match_data(cur, match_data):
-        """Insert a single match into the database"""
+        """Insert a single match into the database with all statistics"""
         
         # using get or create functions for 2 teams and referee
         home_team_id = DatabaseOperations.get_or_create_team(cur, match_data.get('home_team'))
@@ -68,6 +117,27 @@ class DatabaseOperations:
             match_data.get('stadium_city')
         )
         
+        #  all statistics from both basic and detailed statistics
+        all_stats = {}
+        
+        #  basic statistics
+        if 'statistics' in match_data:
+            for category, values in match_data['statistics'].items():
+                all_stats[category] = values
+        
+        # detailed statistics
+        if 'detailed_statistic' in match_data:
+            for section_name, stats in match_data['detailed_statistic'].items():
+                for category, values in stats.items():
+                    all_stats[category] = values
+        
+        # statistics dictionary with English column names
+        stats_dict = {}
+        for polish_name, values in all_stats.items():
+            english_name = DatabaseOperations.translate_statistic_name(polish_name)
+            stats_dict[f'home_{english_name}'] = values.get('home')
+            stats_dict[f'away_{english_name}'] = values.get('away')
+
         cur.execute("""
             INSERT INTO matches (
                 match_id, home_team_id, away_team_id, 
@@ -91,32 +161,30 @@ class DatabaseOperations:
         
         match_id = cur.fetchone()[0]
         
-        all_stats = {}
+        # dynamic INSERT for match_statistics with all statistic columns
+        stat_columns = list(stats_dict.keys())
+        stat_values = list(stats_dict.values())
         
-        #add basic statistics
-        if 'statistics' in match_data:
-            for category, values in match_data['statistics'].items():
-                all_stats[category] = values
-        
-        # add detailed statistics
-        if 'detailed_statistic' in match_data:
-            for section, stats in match_data['detailed_statistic'].items():
-                for category, values in stats.items():
-                    full_category = f"{section} - {category}"
-                    all_stats[full_category] = values
-        
-        # insert  statistics into database
-        for category, values in all_stats.items():
+        if stat_columns:
+            #  match_id column
+            all_columns = ['match_id'] + stat_columns
+            all_values = [match_id] + stat_values
+            
+            # the INSERT query
+            columns_str = ', '.join(all_columns)
+            placeholders = ', '.join(['%s'] * len(all_values))
+            
+            query = f"""
+                INSERT INTO match_statistics ({columns_str})
+                VALUES ({placeholders})
+            """
+            
+            cur.execute(query, tuple(all_values))
+        else:
+            # no statistics, insert just the match_id
             cur.execute("""
-                INSERT INTO match_statistics (
-                    match_id, statistic_name, home_value, away_value
-                ) VALUES (%s, %s, %s, %s)
-            """, (
-                match_id,
-                category,
-                values.get('home'),
-                values.get('away')
-            ))
+                INSERT INTO match_statistics (match_id)
+                VALUES (%s)
+            """, (match_id,))
         
         return match_id
-    
