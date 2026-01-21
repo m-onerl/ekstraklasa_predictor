@@ -1,4 +1,3 @@
-
 import pandas as pd
 from psycopg import connect
 from database.src.db_connect import CONNECTION_INFO
@@ -24,19 +23,22 @@ def load_match_data():
         ms.*
     FROM matches m
     LEFT JOIN match_statistics ms ON m.match_id = ms.match_id
-    WHERE m.status = 'Finished'
     ORDER BY m.date_time
     """
     
     try:
         with connect(CONNECTION_INFO) as conn:
-            # pandas can read SQL directly into a DataFrame
             df = pd.read_sql_query(query, conn)
             
-            print(f"Loaded {len(df)} matches from database")
-            print(f"Number of columns: {len(df.columns)}")
-            print(f"\nFirst few rows:")
-            print(df.head())
+            logger.info(f"Loaded {len(df)} matches from database")
+            logger.info(f"Number of columns: {len(df.columns)}")
+            
+            if 'status' in df.columns:
+                logger.info(f"\nStatus values:")
+                logger.info(df['status'].value_counts())
+            
+            logger.info(f"\nFirst few rows:")
+            logger.info(df.head())
             
             return df
             

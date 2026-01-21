@@ -295,7 +295,7 @@ class Scraper:
                     # found out button to show more matches 
                     try:
                         show_more = await page.query_selector('//*[@id="live-table"]/div[1]/div/div/a')
-                        
+
                         if show_more:
                             await asyncio.sleep(0.5)
                             await show_more.click()
@@ -357,9 +357,11 @@ class Scraper:
                             except:
                                 pass
                         continue
+                    
                 saved = Scraper.save_season_to_database(season_matches, season_name)
                 total_saved = saved
                 logger.info(f"Season {season_name} complete")
+                
                 season_matches.clear()
                 gc.collect()
                 
