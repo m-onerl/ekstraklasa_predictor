@@ -33,13 +33,16 @@ class Scraper:
             # get match data
             match_data = await Statistic.extract_match_data(match_page)
             match_data['url'] = match_href
-            match_data['match_id'] = match_href.split('/')[-1] if '/' in match_href else match_href
+
+            if '?mid=' in match_href:
+                match_data['match_id'] = match_href.split('?mid=')[-1]
+            elif 'mid=' in match_href:
+                match_data['match_id'] = match_href.split('mid=')[-1]
+
             
-            await match_page.close()
-            logger.info(f"Match {match_num} complete")
-            
+            await match_page.close() 
             return match_data
-            
+                
         except Exception as e:
             logger.error(f"Error loading match {match_num}: {str(e)}")
             if match_page and not match_page.is_closed():
