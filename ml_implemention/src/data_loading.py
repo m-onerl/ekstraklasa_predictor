@@ -10,7 +10,6 @@ logging.basicConfig(
 )
 
 def load_match_data():
-    
     query = """
     SELECT 
         m.match_id,
@@ -41,3 +40,4 @@ def load_match_data():
 
 if __name__ == "__main__":
     data = load_match_data()
+print(data[200:210])
