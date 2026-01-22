@@ -3,7 +3,7 @@ import logging
 from psycopg import connect
 from database.src.db_connect import CONNECTION_INFO
 from database.src.db_queries import DatabaseOperations
-from scraper.src.scraper import Scraper
+from scraper.src.scraper import scraper 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -15,13 +15,7 @@ logging.basicConfig(
 async def main():
     """Main function to scrape and save data to database"""
 
-    all_matches_data = await Scraper.scraper()
-    
-    logger.info(f"Scraping completed. Total matches: {len(all_matches_data)}")
-    
-    if not all_matches_data:
-        logger.warning("Got no matches to save")
-        return
+    all_matches_data = await scraper(batch_size=5, start_season_year=2012)  # Call function directly
 
     logger.info("Connecting with database...")
     
@@ -33,14 +27,11 @@ async def main():
                 
                 for idx, match_data in enumerate(all_matches_data, 1):
                     try:
-                        logger.info(f"Inserting match {idx}/{len(all_matches_data)}: "
-                                  f"{match_data.get('home_team', 'Unknown')} vs "
-                                  f"{match_data.get('away_team', 'Unknown')}")
-                        
+  
                         match_id = DatabaseOperations.insert_match_data(cur, match_data)
                         conn.commit()
                         
-                        logger.info(f"Success ! inserted match: {match_id}")
+                        logger.info(f"Success inserted match: {match_id}")
                         success_count += 1
                         
                     except Exception as e:
