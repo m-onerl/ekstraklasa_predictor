@@ -1,8 +1,5 @@
 import asyncio
 import logging
-from psycopg import connect
-from database.src.db_connect import CONNECTION_INFO
-from database.src.db_queries import DatabaseOperations
 from scraper.src.scraper import scraper
 
 logger = logging.getLogger(__name__)
