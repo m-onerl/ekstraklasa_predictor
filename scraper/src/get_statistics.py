@@ -101,6 +101,45 @@ class Statistic:
             else:
                 logger.warning("Could not find away team element")
                 match_data['away_team'] = None
+            # team names with robust error handling
+            home_team_name = None
+            for selector in [
+                '.duelParticipant__home .participant__participantName a',
+                '.duelParticipant__home .participant__participantName',
+                '[class*="duelParticipant__home"] [class*="participantName"]'
+            ]:
+                try:
+                    elem = await match_page.query_selector(selector)
+                    if elem:
+                        home_team_name = (await elem.inner_text()).strip()
+                        if home_team_name:
+                            break
+                except:
+                    continue
+            
+            match_data['home_team'] = home_team_name
+            if not home_team_name:
+                logger.warning(f"Failed to extract home team from: {match_page.url}")
+
+            # away team with same robust approach
+            away_team_name = None
+            for selector in [
+                '.duelParticipant__away .participant__participantName a',
+                '.duelParticipant__away .participant__participantName',
+                '[class*="duelParticipant__away"] [class*="participantName"]'
+            ]:
+                try:
+                    elem = await match_page.query_selector(selector)
+                    if elem:
+                        away_team_name = (await elem.inner_text()).strip()
+                        if away_team_name:
+                            break
+                except:
+                    continue
+            
+            match_data['away_team'] = away_team_name
+            if not away_team_name:
+                logger.warning(f"Failed to extract away team from: {match_page.url}")
 
             score_wrapper = await match_page.query_selector('.detailScore__wrapper')
             if score_wrapper:
