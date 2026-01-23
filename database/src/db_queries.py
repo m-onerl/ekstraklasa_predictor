@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class DatabaseOperations:
     
-    #apping from polish to english column names
+    #mapping from polish to english column names
     STATISTIC_TRANSLATIONS = {
 
         'Oczekiwane gole (xG)': 'xg',
@@ -62,50 +62,94 @@ class DatabaseOperations:
         if not team_name:
             return None
         
+        # get existing team
         cur.execute("SELECT team_id FROM teams WHERE name = %s", (team_name,))
         result = cur.fetchone()
         
         if result:
             return result[0]
         
-        cur.execute("INSERT INTO teams (name) VALUES (%s) RETURNING team_id", (team_name,))
-        return cur.fetchone()[0]
+        # if team doesn't exist 
+        try:
+            cur.execute("INSERT INTO teams (name) VALUES (%s) RETURNING team_id", (team_name,))
+            team_id = cur.fetchone()[0]
+            return team_id
+        except Exception as e:
+            logger.warning(f"Insert failed for team {team_name}, retrying fetch: {e}")
+            cur.execute("SELECT team_id FROM teams WHERE name = %s", (team_name,))
+            result = cur.fetchone()
+            if result:
+                return result[0]
+            raise
     
     @staticmethod
     def get_or_create_referee(cur, referee_name, nationality):   
         if not referee_name:
             return None 
         
+        # Try to get existing referee
         cur.execute("SELECT referee_id FROM referees WHERE name = %s AND nationality = %s", (referee_name, nationality))
         result = cur.fetchone()
         
         if result:
             return result[0]
         
-        cur.execute("INSERT INTO referees (name, nationality) VALUES (%s, %s) RETURNING referee_id", (referee_name, nationality))
-        return cur.fetchone()[0]
+        # Referee doesn't exist, insert it
+        try:
+            cur.execute("INSERT INTO referees (name, nationality) VALUES (%s, %s) RETURNING referee_id", (referee_name, nationality))
+            referee_id = cur.fetchone()[0]
+            return referee_id
+        except Exception as e:
+            # If insert failed due to concurrent insert, try to fetch again
+            logger.warning(f"Insert failed for referee {referee_name}, retrying fetch: {e}")
+            cur.execute("SELECT referee_id FROM referees WHERE name = %s AND nationality = %s", (referee_name, nationality))
+            result = cur.fetchone()
+            if result:
+                return result[0]
+            raise
 
     @staticmethod
     def get_or_create_stadium(cur, stadium_name, city):
         if not stadium_name:
             return None 
         
+        # get existing stadium
         cur.execute("SELECT stadium_id FROM stadiums WHERE name = %s AND city = %s", (stadium_name, city))
         result = cur.fetchone()
         
         if result:
             return result[0]
         
-        cur.execute("INSERT INTO stadiums (name, city) VALUES (%s, %s) RETURNING stadium_id", (stadium_name, city))
-        return cur.fetchone()[0]
+        # if stadium do not exist insert it
+        try:
+            cur.execute("INSERT INTO stadiums (name, city) VALUES (%s, %s) RETURNING stadium_id", (stadium_name, city))
+            stadium_id = cur.fetchone()[0]
+            return stadium_id
+        except Exception as e:
+            # If insert failed due to concurrent insert, try to fetch again
+            logger.warning(f"Insert failed for stadium {stadium_name}, retrying fetch: {e}")
+            cur.execute("SELECT stadium_id FROM stadiums WHERE name = %s AND city = %s", (stadium_name, city))
+            result = cur.fetchone()
+            if result:
+                return result[0]
+            raise
     
     @staticmethod
     def insert_match_data(cur, match_data):
         """Insert a single match into the database with all statistics"""
         
         # using get or create functions for 2 teams and referee
-        home_team_id = DatabaseOperations.get_or_create_team(cur, match_data.get('home_team'))
-        away_team_id = DatabaseOperations.get_or_create_team(cur, match_data.get('away_team'))
+        home_team_name = match_data.get('home_team')
+        away_team_name = match_data.get('away_team')
+        
+        logger.debug(f"Processing match: {home_team_name} vs {away_team_name}")
+        
+        home_team_id = DatabaseOperations.get_or_create_team(cur, home_team_name)
+        logger.debug(f"Home team '{home_team_name}' -> ID: {home_team_id}")
+        
+        away_team_id = DatabaseOperations.get_or_create_team(cur, away_team_name)
+        logger.debug(f"Away team '{away_team_name}' -> ID: {away_team_id}")
+        
         referee_id = DatabaseOperations.get_or_create_referee(
             cur, 
             match_data.get('referee_name'),
