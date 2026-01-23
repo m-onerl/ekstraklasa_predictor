@@ -74,14 +74,33 @@ class Statistic:
             if date_element:
                 match_data['date_time'] = (await date_element.inner_text()).strip()
                 
+            # Extract home team with multiple selector attempts
             home_team_element = await match_page.query_selector('.duelParticipant__home .participant__participantName a')
+            if not home_team_element:
+                home_team_element = await match_page.query_selector('.duelParticipant__home .participant__participantName')
+            if not home_team_element:
+                home_team_element = await match_page.query_selector('[class*="participant__home"] [class*="participantName"]')
             
             if home_team_element:
                 match_data['home_team'] = (await home_team_element.inner_text()).strip()
+                logger.debug(f"Extracted home team: {match_data['home_team']}")
+            else:
+                logger.warning("Could not find home team element")
+                match_data['home_team'] = None
 
+            # Extract away team with multiple selector attempts
             away_team_element = await match_page.query_selector('.duelParticipant__away .participant__participantName a')
+            if not away_team_element:
+                away_team_element = await match_page.query_selector('.duelParticipant__away .participant__participantName')
+            if not away_team_element:
+                away_team_element = await match_page.query_selector('[class*="participant__away"] [class*="participantName"]')
+            
             if away_team_element:
                 match_data['away_team'] = (await away_team_element.inner_text()).strip()
+                logger.debug(f"Extracted away team: {match_data['away_team']}")
+            else:
+                logger.warning("Could not find away team element")
+                match_data['away_team'] = None
 
             score_wrapper = await match_page.query_selector('.detailScore__wrapper')
             if score_wrapper:

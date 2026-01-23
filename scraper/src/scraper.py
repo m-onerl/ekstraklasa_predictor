@@ -26,20 +26,30 @@ class Scraper:
 
             match_page = await browser.new_page()
             await match_page.goto(match_href, wait_until="domcontentloaded", timeout=30000)
-            await asyncio.sleep(0.5)
+            
+            # wait for teams elements to be present before extracting data
+            try:
+                await match_page.wait_for_selector('.duelParticipant__home', timeout=5000)
+                await asyncio.sleep(0.5)
+            except Exception as e:
+                logger.warning(f"Team elements not found quickly for match {match_num}: {e}")
+                await asyncio.sleep(1)
             
             logger.info(f"Successfully loaded match {match_num}")
             
             # get match data
             match_data = await Statistic.extract_match_data(match_page)
             match_data['url'] = match_href
-            match_data['match_id'] = match_href.split('/')[-1] if '/' in match_href else match_href
+
+            if '?mid=' in match_href:
+                match_data['match_id'] = match_href.split('?mid=')[-1]
+            elif 'mid=' in match_href:
+                match_data['match_id'] = match_href.split('mid=')[-1]
+
             
-            await match_page.close()
-            logger.info(f"Match {match_num} complete")
-            
+            await match_page.close() 
             return match_data
-            
+                
         except Exception as e:
             logger.error(f"Error loading match {match_num}: {str(e)}")
             if match_page and not match_page.is_closed():
@@ -56,12 +66,16 @@ class Scraper:
         try:
             with connect(CONNECTION_INFO) as conn: 
                 with conn.cursor() as cur:
-                    for match_data in season_matches:
+                    for idx, match_data in enumerate(season_matches):
                         try:
+                            home_team = match_data.get('home_team', 'Unknown')
+                            away_team = match_data.get('away_team', 'Unknown')
+                            logger.info(f"Inserting match {idx+1}/{len(season_matches)}: {home_team} vs {away_team}")
                             DatabaseOperations.insert_match_data(cur, match_data)
                             saved_count += 1
                         except Exception as e:
-                            logger.error(f"Error inserting match: {e}")
+                            logger.error(f"Error inserting match {home_team} vs {away_team}: {e}")
+                            logger.error(f"Match data keys: {match_data.keys()}")
                             continue
                     conn.commit()
             logger.info(f"Saved {saved_count}/{len(season_matches)} matches for season {season_name}")
@@ -195,6 +209,10 @@ async def scraper(batch_size=5, start_season_year=2012):
                 # successful results to season matches
                 for match_data in batch_results:
                     if match_data:
+                        # Validate that essential data is present
+                        if not match_data.get('home_team') or not match_data.get('away_team'):
+                            logger.warning(f"Skipping match with missing team data: Home={match_data.get('home_team')}, Away={match_data.get('away_team')}, URL={match_data.get('url')}")
+                            continue
                         match_data['season'] = season_name
                         season_matches.append(match_data)
                 
