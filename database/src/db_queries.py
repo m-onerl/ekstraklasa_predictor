@@ -169,11 +169,19 @@ class DatabaseOperations:
             for category, values in match_data['statistics'].items():
                 all_stats[category] = values
         
-        # detailed statistics
+        # detailed statistics keep first occurrence of each category
         if 'detailed_statistic' in match_data:
+            logger.debug(f"Processing detailed_statistic with {len(match_data['detailed_statistic'])} sections")
             for section_name, stats in match_data['detailed_statistic'].items():
+                logger.debug(f"Section '{section_name}' has {len(stats)} categories")
                 for category, values in stats.items():
-                    all_stats[category] = values
+                    # only add if not already present 
+                    if category not in all_stats:
+                        all_stats[category] = values
+                    else:
+                        logger.debug(f"Skipping duplicate category '{category}' from section '{section_name}' (already have it)")
+        else:
+            logger.warning(f"No 'detailed_statistic' key in match_data for match {match_data.get('match_id')}")
         
         # statistics dictionary with English column names
         stats_dict = {}
