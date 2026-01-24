@@ -11,7 +11,7 @@ logging.basicConfig(
 
 async def main():
     """Main function to scrape and save data to database"""
-    await scraper(batch_size=5, start_season_year=2012)
+    await scraper(start_season_year=2012)
 
 
 
