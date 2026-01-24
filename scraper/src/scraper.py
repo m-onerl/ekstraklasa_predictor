@@ -83,7 +83,7 @@ class Scraper:
             logger.error(f"Database error for season {season_name}: {e}")
         return saved_count                    
     
-async def scraper(batch_size=5, start_season_year=2012):
+async def scraper(start_season_year=2012):
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)  
@@ -115,12 +115,12 @@ async def scraper(batch_size=5, start_season_year=2012):
                 else:
                     start_year = year_text
                 
-                url = f"https://www.flashscore.pl{href}wyniki/"
+                season_url = f"https://www.flashscore.pl{href}wyniki/"
                 # append into list
                 seasons_data.append({
                     'index': i,
                     'text': text.strip(),
-                    'href': url,
+                    'href': season_url,
                     'year': start_year
                 })
                 
@@ -134,14 +134,20 @@ async def scraper(batch_size=5, start_season_year=2012):
             if s['year'].isdigit() and int(s['year']) >= start_season_year
         ]
 
-
         res = [d.get('href') for d in filtered_seasons if 'href' in d]
+        season_names = [d.get('text', f'Season {i}') for i, d in enumerate(filtered_seasons)]
+        
+        await browser.close()
         
         total_saved_all_seasons = 0  # total across all seasons
         
-        for season_idx, link in enumerate(res):
+        for season_idx, (link, season_name) in enumerate(zip(res, season_names)):
+            logger.info(f"Starting season {season_idx+1}/{len(res)}: {season_name}")
+            
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+            
             season_matches = []
-            season_name = filtered_seasons[season_idx].get('text', f'Season {season_idx}')
             logger.info(f"Starting season: {season_name}")
             
             await page.goto(link, wait_until="networkidle")
@@ -189,47 +195,45 @@ async def scraper(batch_size=5, start_season_year=2012):
                 except Exception as e:
                     logger.error(f"Error extracting href: {e}")
             
-            # process matches in batches asynchronously
+            # process matches sequentially (one by one) for reliability
             total_matches = len(match_urls)
-            for batch_start in range(0, total_matches, batch_size):
-                batch_end = min(batch_start + batch_size, total_matches)
-                batch_urls = match_urls[batch_start:batch_end]
+            for match_idx, url in enumerate(match_urls):
+                logger.info(f"Processing match {match_idx+1}/{total_matches}")
                 
-                logger.info(f"Processing batch {batch_start//batch_size + 1}: matches {batch_start+1}-{batch_end}/{total_matches}")
+                match_data = await Scraper.scrape_single_match(browser, url, match_idx + 1, total_matches)
                 
-                # tasks for concurrent scraping
-                tasks = [
-                    Scraper.scrape_single_match(browser, url, batch_start + i + 1, total_matches)
-                    for i, url in enumerate(batch_urls)
-                ]
+                if match_data:
+                    if not match_data.get('home_team') or not match_data.get('away_team'):
+                        logger.warning(f"Skipping match with missing team data: Home={match_data.get('home_team')}, Away={match_data.get('away_team')}, URL={match_data.get('url')}")
+                        continue
+                    
+                    # validate detailed statistics were extracted
+                    ds = match_data.get('detailed_statistic', {})
+                    if len(ds) == 0:
+                        logger.warning(f"Match {match_idx+1} has empty detailed_statistic!")
+                    
+                    match_data['season'] = season_name
+                    season_matches.append(match_data)
+                    logger.info(f"Match {match_idx+1} scraped successfully (detailed sections: {len(ds)})")
+                else:
+                    logger.error(f"Match {match_idx+1} failed to scrape")
                 
-                # for all tasks in batch to complete
-                batch_results = await asyncio.gather(*tasks)
-                
-                # successful results to season matches
-                for match_data in batch_results:
-                    if match_data:
-                        # Validate that essential data is present
-                        if not match_data.get('home_team') or not match_data.get('away_team'):
-                            logger.warning(f"Skipping match with missing team data: Home={match_data.get('home_team')}, Away={match_data.get('away_team')}, URL={match_data.get('url')}")
-                            continue
-                        match_data['season'] = season_name
-                        season_matches.append(match_data)
-                
-                logger.info(f"Batch complete: {len([r for r in batch_results if r])} successful")
+                # delay between matches to avoid rate limiting
+                await asyncio.sleep(2)
                 
             # season to database
             saved = Scraper.save_season_to_database(season_matches, season_name)
             total_saved_all_seasons += saved
             logger.info(f"Season {season_name} complete: {saved}/{len(season_matches)} saved")
             
+            await browser.close()
+            logger.info(f"Closed browser for season {season_name} (fresh start for next season)")
+            
             season_matches.clear()
             gc.collect()
-            
-        await browser.close()
         logger.info(f"Scraping complete {total_saved_all_seasons}")
         
         return total_saved_all_seasons
                 
 if __name__ == "__main__":
-    asyncio.run(scraper(batch_size=5, start_season_year=2012))
+    asyncio.run(scraper(start_season_year=2012))

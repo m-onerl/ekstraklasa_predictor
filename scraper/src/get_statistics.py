@@ -54,7 +54,6 @@ class Statistic:
                                             'home': home_value,
                                             'away': away_value
                                         }
-                    
                     if detailed_stats:
                         logger.info(f"Successfully extracted {len(detailed_stats)} sections")
                         break
@@ -63,7 +62,6 @@ class Statistic:
                 logger.error(f"Attempt error extracting detailed statistics: {e}")
         
         return detailed_stats
-        
     
     @staticmethod
     async def extract_match_data(match_page):
@@ -238,16 +236,35 @@ class Statistic:
                     logger.info(f"Navigating to statistics: {stats_url}")
                     
                     try:
-                        await match_page.goto(stats_url, wait_until="domcontentloaded", timeout=15000)
+                        if match_page.is_closed():
+                            logger.error("Match page is already closed before stats navigation!")
+                            match_data['detailed_statistic'] = {}
+                            return match_data
                         
-                        # wait for content to load
+                        await match_page.goto(stats_url, wait_until="domcontentloaded", timeout=30000)
+                        
+                        # wait longer for statistics with more retries
                         await asyncio.sleep(2)
                         
-                        try:
-                            await match_page.wait_for_selector('[data-testid="wcl-statistics"]', timeout=8000)
-                            logger.info("Statistics elements appeared")
-                        except:
-                            logger.warning("Statistics elements did not appear in time")
+                        stats_loaded = False
+                        for attempt in range(5):  
+                            try:
+                                await match_page.wait_for_selector('[data-testid="wcl-statistics"]', timeout=8000) 
+                                logger.info(f"Statistics elements appeared (attempt {attempt+1})")
+                                stats_loaded = True
+                                break
+                            except Exception as wait_err:
+                                if attempt < 4:
+                                    wait_time = 2 + attempt
+                                    logger.warning(f"Statistics not loaded yet, retry {attempt+1}/4 (waiting {wait_time}s): {wait_err}")
+                                    await asyncio.sleep(wait_time)
+                                else:
+                                    logger.warning(f"Statistics elements did not appear after 3 attempts: {wait_err}")
+                        
+                        if not stats_loaded:
+                            logger.error(f"Failed to load statistics for URL: {stats_url}")
+                            match_data['detailed_statistic'] = {}
+                            return match_data
                         
                         # now scrape detailed statistics with retry logic
                         detailed_stats = await Statistic.extract_detailed_statistics(match_page)
