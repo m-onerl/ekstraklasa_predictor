@@ -143,49 +143,38 @@ def calculate_rolling_stats(df, n_games = 5):
         
     return pd.DataFrame(result_rows)
 
-def prepare_data(df):
+def prepare_data(df, min_games = 3, n_games = 5):
     
-    df = df.copy()
-    df = df.dropna(subset=['home_score', 'away_score'])
+    # calculate rolling stats
+    features_df = calculate_rolling_stats(df, n_games = n_games)
+    
+    # drop out teams where are not avilable 5 matches in past
+    features_df = features_df[features_df['home_games_played'] >= min_games]
+    features_df = features_df[features_df['away_games_played'] >= min_games]
 
-    df['result'] = df.apply(lambda row: 
-        1 if row['home_score'] > row['away_score'] 
-        else (0 if row['home_score'] == row['away_score']  
-        else 2), axis=1  
-    )
+    # data which model will get 
     feature_columns = [
-        'home_avg_xg_last_5',         
-        'home_win_rate_last_5',
-        'home_ball_possession', 'away_ball_possession',
-        'home_total_shots', 'away_total_shots',
-        'home_shots_on_target', 'away_shots_on_target',
-        'home_big_chances', 'away_big_chances',
-        'home_corner_kicks', 'away_corner_kicks',
-        'home_passes', 'away_passes',
-        'home_yellow_cards', 'away_yellow_cards',
-        'home_shots_inside_box', 'away_shots_inside_box',
-        'home_shots_outside_box', 'away_shots_outside_box',
-        'home_crosses', 'away_crosses',
-        'home_fouls', 'away_fouls',
-        'home_offsides', 'away_offsides',
+        'home_avg_goals_last_5', 'home_avg_conceded_last_5',
+        'home_avg_xg_last_5', 'home_avg_shots_last_5',
+        'home_avg_possession_last_5', 'home_win_rate_last_5', 'home_ppg_last_5',
+        
+        'away_avg_goals_last_5', 'away_avg_conceded_last_5',
+        'away_avg_xg_last_5', 'away_avg_shots_last_5',
+        'away_avg_possession_last_5', 'away_win_rate_last_5', 'away_ppg_last_5',
+        
+        'form_diff', 'xg_diff', 'goals_diff'
     ]
     
-    #  which columns exist
-    existing_features = [col for col in feature_columns if col in df.columns]
-    #  feature matrix
-    X = df[existing_features].copy()
-    y = df['result'].copy()
-    
-    #  all feature columns 
-    for col in X.columns:
-        X[col] = clean_numeric_column(X[col])
-    
-    # missing values
-    missing_before = X.isnull().sum().sum()
+    #the result of match
+    X = features_df[feature_columns].copy()
+    y = features_df.apply(lambda row: 
+        1 if row['home_score'] > row['away_score'] 
+        else (0 if row['home_score'] == row['away_score']  
+        else 2),
+        axis=1  
+    )
+    return X, y, feature_columns
 
-    if missing_before > 0:
-        X = X.fillna(0)  # 0 instead of median
-    return X, y, existing_features
 
 
 def main():
