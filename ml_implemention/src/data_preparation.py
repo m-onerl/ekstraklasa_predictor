@@ -20,8 +20,11 @@ def clean_numeric_column(series):
 
 def calculate_rolling_stats(df, n_games = 5):
     # calculate moving average
-    df = df.sort_values('data_time').copy()
+    
+    df = df.sort_values('date_time').copy()
+    
     team_history = {}
+    
     result_rows = []
     
     for idx, row in df.iterrows():
