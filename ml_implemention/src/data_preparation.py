@@ -103,7 +103,45 @@ def calculate_rolling_stats(df, n_games = 5):
         if away_id not in team_history:
             team_history[away_id] = []
 
-    
+        if row['home_score'] > row['away_score']:
+            home_points, away_points = 3, 0
+            home_win, away_win = 1, 0
+        elif row['home_score'] < row['away_score']:
+            away_points, home_points = 3, 0
+            away_win, home_win = 1, 0
+        else:
+            home_points, away_points = 1, 1
+            away_win, home_win = 0, 0
+
+        home_xg = clean_numeric_column(pd.Series([row.get('home_xg', 0)]))[0] or 0
+        away_xg = clean_numeric_column(pd.Series([row.get('away_xg', 0)]))[0] or 0
+        home_shots = clean_numeric_column(pd.Series([row.get('home_total_shots', 10)]))[0] or 10
+        away_shots = clean_numeric_column(pd.Series([row.get('away_total_shots', 10)]))[0] or 10
+        home_poss = clean_numeric_column(pd.Series([row.get('home_ball_possession', 50)]))[0] or 50
+        away_poss = clean_numeric_column(pd.Series([row.get('away_ball_possession', 50)]))[0] or 50
+        
+        
+        team_history[home_id].append({
+            'goals_for': row['home_score'],
+            'goals_against': row['away_score'],
+            'xg': home_xg,
+            'shots': home_shots,
+            'possession': home_poss,
+            'win': home_win,
+            'points': home_points
+        })
+        
+        team_history[away_id].append({
+            'goals_for': row['away_score'],
+            'goals_against': row['away_score'],
+            'xg': away_xg,
+            'shots': away_shots,
+            'possession': away_poss,
+            'win': away_win,
+            'points': away_points
+        })
+        
+    return pd.DataFrame(result_rows)
 
 def prepare_data(df):
     
