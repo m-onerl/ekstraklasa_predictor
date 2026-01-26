@@ -18,6 +18,92 @@ def clean_numeric_column(series):
         series = pd.to_numeric(series, errors='coerce')
     return series
 
+def calculate_rolling_stats(df, n_games = 5):
+    # calculate moving average
+    df = df.sort_values('data_time').copy()
+    team_history = {}
+    result_rows = []
+    
+    for idx, row in df.iterrows():
+        home_id = row['home_team_id']
+        away_id = row['away_team_id']
+    
+        home_hist = team_history.get(home_id, [])
+        away_hist = team_history.get(away_id, [])
+        
+        if len(home_hist) >= 1:
+            recent_home = home_hist[-n_games:] 
+            home_avg_goals = np.mean([h['goals_for'] for h in recent_home])
+            home_avg_conceded = np.mean([h['goals_against'] for h in recent_home])
+            home_avg_xg = np.mean([h['xg'] for h in recent_home])
+            home_avg_shots = np.mean([h['shots'] for h in recent_home])
+            home_avg_possession = np.mean([h['possession'] for h in recent_home])
+            home_win_rate = np.mean([h['win'] for h in recent_home])
+            home_ppg = np.mean([h['points'] for h in recent_home])
+        else:
+
+            home_avg_goals = 1.0
+            home_avg_conceded = 1.0
+            home_avg_xg = 1.0
+            home_avg_shots = 10.0
+            home_avg_possession = 50.0
+            home_win_rate = 0.33
+            home_ppg = 1.0
+
+        if len(away_hist) >= 1:
+            recent_away = away_hist[-n_games:]
+            away_avg_goals = np.mean([h['goals_for'] for h in recent_away])
+            away_avg_conceded = np.mean([h['goals_against'] for h in recent_away])
+            away_avg_xg = np.mean([h['xg'] for h in recent_away])
+            away_avg_shots = np.mean([h['shots'] for h in recent_away])
+            away_avg_possession = np.mean([h['possession'] for h in recent_away])
+            away_win_rate = np.mean([h['win'] for h in recent_away])
+            away_ppg = np.mean([h['points'] for h in recent_away])
+        else:
+            away_avg_goals = 1.0
+            away_avg_conceded = 1.0
+            away_avg_xg = 1.0
+            away_avg_shots = 10.0
+            away_avg_possession = 50.0
+            away_win_rate = 0.33
+            away_ppg = 1.0
+            
+        result_rows.append({
+            'match_id' : row['match_id'],
+
+            'home_avg_goals_last_5': home_avg_goals,
+            'home_avg_conceded_last_5': home_avg_conceded,
+            'home_avg_xg_last_5': home_avg_xg,
+            'home_avg_shots_last_5': home_avg_shots,
+            'home_avg_possession_last_5': home_avg_possession,
+            'home_win_rate_last_5': home_win_rate,
+            'home_ppg_last_5': home_ppg,
+            'home_games_played': len(home_hist),
+            
+
+            'away_avg_goals_last_5': away_avg_goals,
+            'away_avg_conceded_last_5': away_avg_conceded,
+            'away_avg_xg_last_5': away_avg_xg,
+            'away_avg_shots_last_5': away_avg_shots,
+            'away_avg_possession_last_5': away_avg_possession,
+            'away_win_rate_last_5': away_win_rate,
+            'away_ppg_last_5': away_ppg,
+            'away_games_played': len(away_hist),
+
+            'form_diff': home_win_rate - away_win_rate,
+            'xg_diff': home_avg_xg - away_avg_xg,
+            'goals_diff': home_avg_goals - away_avg_goals,
+
+            'home_score': row['home_score'],
+            'away_score': row['away_score'],
+        })
+        
+        if home_id not in team_history:
+            team_history[home_id] = []
+        if away_id not in team_history:
+            team_history[away_id] = []
+
+    
 
 def prepare_data(df):
     
@@ -30,7 +116,8 @@ def prepare_data(df):
         else 2), axis=1  
     )
     feature_columns = [
-        'home_xg', 'away_xg',
+        'home_avg_xg_last_5',         
+        'home_win_rate_last_5',
         'home_ball_possession', 'away_ball_possession',
         'home_total_shots', 'away_total_shots',
         'home_shots_on_target', 'away_shots_on_target',
