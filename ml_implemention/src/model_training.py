@@ -31,4 +31,13 @@ class MatchPredictor:
     def train(self, X_train, y_train, feature_names):
         self.feature_names = feature_names
         
+        X_scaled = self.scaler.fit_transform(X_train)
         
+        self.model.fit(X_scaled, y_train)
+        logger.info(f'Model trained on {len(X_train)}')
+
+    def predict(self, X):
+        X_scaled = self.scaler.tranform(X)
+        return self.model.predict_proba(X_scaled)
+    
+            
