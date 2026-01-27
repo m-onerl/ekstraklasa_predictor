@@ -37,7 +37,9 @@ class MatchPredictor:
         logger.info(f'Model trained on {len(X_train)}')
 
     def predict(self, X):
-        X_scaled = self.scaler.tranform(X)
-        return self.model.predict_proba(X_scaled)
+        X_scaled = self.scaler.transform(X)
+        return self.model.predict(X_scaled)
     
-            
+    def predict_proba(self, X):
+        X_scaled = self.scaler.transform(X)
+        return self.model.predict_proba(X_scaled)
