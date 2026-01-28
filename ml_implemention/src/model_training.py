@@ -43,3 +43,55 @@ class MatchPredictor:
     def predict_proba(self, X):
         X_scaled = self.scaler.transform(X)
         return self.model.predict_proba(X_scaled)
+    
+    def evaluate(self, X_test, y_test):
+
+        predictions = self.predict(X_test)
+        accuracy = accuracy_score(y_test, predictions)
+        
+
+        logger.info(f"  Accuracy: {accuracy:.2%}")
+        logger.info(f"\n{classification_report(y_test, predictions, target_names=['Draw', 'Home Win', 'Away Win'])}")
+        
+        return accuracy
+    
+    def save(self, path='models/match_predictor.pkl'):
+
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        joblib.dump({
+            'model': self.model,
+            'scaler': self.scaler,
+            'feature_names': self.feature_names
+        }, path)
+        logger.info(f"Model saved to {path}")
+        
+    def load(self, path='models/match_predictor.pkl'):
+
+        data = joblib.load(path)
+        self.model = data['model']
+        self.scaler = data['scaler']
+        self.feature_names = data['feature_names']
+        logger.info(f"Model loaded from {path}")
+
+
+def main():
+
+    logger.info("Loading data...")
+    df = load_match_data()
+    
+    logger.info("Preparing features...")
+    X, y, features = prepare_data(df)
+    
+    logger.info("Splitting data...")
+    X_train, X_test, y_train, y_test = split_data(X, y)
+    
+    logger.info("Training model...")
+    predictor = MatchPredictor()
+    predictor.train(X_train, y_train, features)
+
+    predictor.evaluate(X_test, y_test)
+    predictor.save('models/match_predictor.pkl')
+
+
+if __name__ == "__main__":
+    main()
