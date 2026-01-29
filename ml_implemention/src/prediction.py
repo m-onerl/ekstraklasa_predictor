@@ -39,7 +39,6 @@ def get_team_current_form(team_name, n_games=5):
     }
     
     def to_float(val, default):
-        """Convert value to float, handling None and string types."""
         if val is None or val == '':
             return default
         try:
