@@ -7,7 +7,6 @@ import logging
 
 from ml_implemention.src.data_loading import load_match_data
 from ml_implemention.src.data_preparation import prepare_data
-from ml_implemention.src.train_test_split import split_data
 
 logger = logging.getLogger(__name__)
 
