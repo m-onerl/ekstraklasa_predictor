@@ -72,26 +72,3 @@ class MatchPredictor:
         self.scaler = data['scaler']
         self.feature_names = data['feature_names']
         logger.info(f"Model loaded from {path}")
-
-
-def main():
-
-    logger.info("Loading data...")
-    df = load_match_data()
-    
-    logger.info("Preparing features...")
-    X, y, features = prepare_data(df)
-    
-    logger.info("Splitting data...")
-    X_train, X_test, y_train, y_test = split_data(X, y)
-    
-    logger.info("Training model...")
-    predictor = MatchPredictor()
-    predictor.train(X_train, y_train, features)
-
-    predictor.evaluate(X_test, y_test)
-    predictor.save('models/match_predictor.pkl')
-
-
-if __name__ == "__main__":
-    main()

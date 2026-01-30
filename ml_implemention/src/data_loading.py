@@ -37,28 +37,3 @@ def load_match_data():
     except Exception as e:
         logger.error(f"Error loading data: {e}")
         raise
-
-if __name__ == "__main__":
-    data = load_match_data()
-    
-    ranges = [(0, 200), (200, 400), (400, 800), (800, 1600), (1600, 2000)]
-    
-    for start, end in ranges:
-        if len(data) > start:
-            subset = data.iloc[start:min(end, len(data))]
-            row = subset.sample(1).iloc[0]
-            
-            print("\n" + "_"*20)
-            print(f"RANGE: {start}-{end}")
-            print(f"MATCH: {row['home_team_name']} vs {row['away_team_name']}")
-            print(f"SCORE: {row['home_score']} - {row['away_score']}")
-            print(f"Date: {row['date_time']} | Attendance: {row['attendance']}")
-            print("\n" + "_"*20)
-            print(f"xG: {row['home_xg']} - {row['away_xg']}")
-            print(f"Possession: {row['home_ball_possession']} - {row['away_ball_possession']}")
-            print(f"Total shots: {row['home_total_shots']} - {row['away_total_shots']}")
-            print(f"Shots on target: {row['home_shots_on_target']} - {row['away_shots_on_target']}")
-            print(f"Corners: {row['home_corner_kicks']} - {row['away_corner_kicks']}")
-            print(f"Yellow cards: {row['home_yellow_cards']} - {row['away_yellow_cards']}")
-            print(f"Fouls: {row['home_fouls']} - {row['away_fouls']}")
-            print("\n" + "_"*20)
