@@ -179,20 +179,3 @@ def prepare_data(df, min_games = 3, n_games = 5):
     return X, y, feature_columns
 
 
-
-def main():
-
-    df = load_match_data()
-    X, y, features = prepare_data(df)
-    
-    logger.info("FEATURES USED:")
-    for i, feature in enumerate(features, 1):
-        logger.info(f"  {i:2}. {feature}")
-
-    logger.info("SAMPLE DATA:")
-    logger.info(X.head(10))
-    logger.info(X.describe())
-
-
-if __name__ == "__main__":
-    main()
