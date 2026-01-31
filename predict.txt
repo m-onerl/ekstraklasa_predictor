@@ -1,0 +1,12 @@
+    Home Win (Górnik Zabrze): 34.9%
+    Draw:                   33.9%
+    Away Win (Piast Gliwice): 31.2%
+
+
+    Home Win (Widzew Łódź): 29.8%
+    Draw:                   34.8%
+    Away Win (Jagiellonia Białystok): 35.4%
+
+    Home Win (Lech Poznań): 42.4%
+    Draw:                   32.0%
+    Away Win (Lechia Gdańsk): 25.7%
