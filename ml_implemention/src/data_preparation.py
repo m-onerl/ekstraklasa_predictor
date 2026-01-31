@@ -18,6 +18,15 @@ def clean_numeric_column(series):
         series = pd.to_numeric(series, errors='coerce')
     return series
 
+@staticmethod
+def safe_float(val, default):
+    if val is None or pd.isna(val):
+        return default
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
 def calculate_rolling_stats(df, n_games = 5):
     # calculate moving average
     
@@ -43,8 +52,13 @@ def calculate_rolling_stats(df, n_games = 5):
             home_avg_possession = np.mean([h['possession'] for h in recent_home])
             home_win_rate = np.mean([h['win'] for h in recent_home])
             home_ppg = np.mean([h['points'] for h in recent_home])
+            home_avg_corners = np.mean([h['corner_kicks'] for h in recent_home])
+            home_avg_fouls = np.mean([h['fouls'] for h in recent_home])
+            home_avg_yellows = np.mean([h['yellow_cards'] for h in recent_home])
+            home_avg_red = np.mean([h['red_cards'] for h in recent_home])    
+            home_avg_free_kicks = np.mean([h['free_kicks'] for h in recent_home])
+            
         else:
-
             home_avg_goals = 1.0
             home_avg_conceded = 1.0
             home_avg_xg = 1.0
@@ -52,7 +66,12 @@ def calculate_rolling_stats(df, n_games = 5):
             home_avg_possession = 50.0
             home_win_rate = 0.33
             home_ppg = 1.0
-
+            home_avg_corners = 5.0
+            home_avg_fouls = 12.0
+            home_avg_yellow = 2.0
+            home_avg_red = 0.1
+            home_avg_free_kicks = 12.0 
+            
         if len(away_hist) >= 1:
             recent_away = away_hist[-n_games:]
             away_avg_goals = np.mean([h['goals_for'] for h in recent_away])
@@ -62,6 +81,11 @@ def calculate_rolling_stats(df, n_games = 5):
             away_avg_possession = np.mean([h['possession'] for h in recent_away])
             away_win_rate = np.mean([h['win'] for h in recent_away])
             away_ppg = np.mean([h['points'] for h in recent_away])
+            away_avg_corners = np.mean([h['corner_kicks'] for h in recent_away])
+            away_avg_fouls = np.mean([h['fouls'] for h in recent_away])
+            away_avg_yellows = np.mean([h['yellow_cards'] for h in recent_away])
+            away_avg_red = np.mean([h['red_cards'] for h in recent_away])    
+            away_avg_free_kicks = np.mean([h['free_kicks'] for h in recent_away])
         else:
             away_avg_goals = 1.0
             away_avg_conceded = 1.0
@@ -70,6 +94,11 @@ def calculate_rolling_stats(df, n_games = 5):
             away_avg_possession = 50.0
             away_win_rate = 0.33
             away_ppg = 1.0
+            away_avg_corners = 5.0
+            away_avg_fouls = 12.0
+            away_avg_yellow = 2.0
+            away_avg_red = 0.1
+            away_avg_free_kicks = 12.0 
             
         result_rows.append({
             'match_id' : row['match_id'],
@@ -82,7 +111,11 @@ def calculate_rolling_stats(df, n_games = 5):
             'home_win_rate_last_5': home_win_rate,
             'home_ppg_last_5': home_ppg,
             'home_games_played': len(home_hist),
-            
+            'home_avg_corners_last_5': home_avg_corners,
+            'home_avg_fouls_last_5': home_avg_fouls,
+            'home_avg_yellow_last_5': home_avg_yellow,
+            'home_avg_red_last_5': home_avg_red,
+            'home_avg_free_kicks_last_5': home_avg_free_kicks,
 
             'away_avg_goals_last_5': away_avg_goals,
             'away_avg_conceded_last_5': away_avg_conceded,
@@ -92,13 +125,29 @@ def calculate_rolling_stats(df, n_games = 5):
             'away_win_rate_last_5': away_win_rate,
             'away_ppg_last_5': away_ppg,
             'away_games_played': len(away_hist),
-
+            'away_avg_corners_last_5': away_avg_corners,
+            'away_avg_fouls_last_5': away_avg_fouls,
+            'away_avg_yellow_last_5': away_avg_yellow,
+            'away_avg_red_last_5': away_avg_red,
+            'away_avg_free_kicks_last_5': away_avg_free_kicks,
+            
             'form_diff': home_win_rate - away_win_rate,
             'xg_diff': home_avg_xg - away_avg_xg,
             'goals_diff': home_avg_goals - away_avg_goals,
 
             'home_score': row['home_score'],
             'away_score': row['away_score'],
+            
+            'home_corner_kicks': safe_float(row.get('home_corner_kicks'), 5),
+            'away_corner_kicks': safe_float(row.get('away_corner_kicks'), 5),
+            'home_fouls': safe_float(row.get('home_fouls'), 12),
+            'away_fouls': safe_float(row.get('away_fouls'), 12),
+            'home_yellow_cards': safe_float(row.get('home_yellow_cards'), 2),
+            'away_yellow_cards': safe_float(row.get('away_yellow_cards'), 2),
+            'home_red_cards': safe_float(row.get('home_red_cards'), 0),
+            'away_red_cards': safe_float(row.get('away_red_cards'), 0),
+            'home_free_kicks': safe_float(row.get('home_free_kicks'), 12),
+            'away_free_kicks': safe_float(row.get('away_free_kicks'), 12),
         })
         
         if home_id not in team_history:
@@ -131,7 +180,12 @@ def calculate_rolling_stats(df, n_games = 5):
             'shots': home_shots,
             'possession': home_poss,
             'win': home_win,
-            'points': home_points
+            'points': home_points,
+            'corner_kicks': safe_float(row.get('home_corner_kicks'), 5),
+            'fouls': safe_float(row.get('home_fouls'), 12),
+            'yellow_cards': safe_float(row.get('home_yellow_cards'), 2),
+            'red_cards': safe_float(row.get('home_red_cards'), 0),
+            'free_kicks': safe_float(row.get('home_free_kicks'), 12),
         })
         
         team_history[away_id].append({
@@ -141,7 +195,12 @@ def calculate_rolling_stats(df, n_games = 5):
             'shots': away_shots,
             'possession': away_poss,
             'win': away_win,
-            'points': away_points
+            'points': away_points,
+            'corner_kicks': safe_float(row.get('away_corner_kicks'), 5),
+            'fouls': safe_float(row.get('away_fouls'), 12),
+            'yellow_cards': safe_float(row.get('away_yellow_cards'), 2),
+            'red_cards': safe_float(row.get('away_red_cards'), 0),
+            'free_kicks': safe_float(row.get('away_free_kicks'), 12),
         })
         
     return pd.DataFrame(result_rows)
@@ -178,4 +237,30 @@ def prepare_data(df, min_games = 3, n_games = 5):
     )
     return X, y, feature_columns
 
-
+def prepare_data_stats(df, min_games = 3, n_games = 5):
+    
+    features_df = calculate_rolling_stats(df, n_games = n_games)
+    
+    features_df = features_df[features_df['home_games_played']]
+    features_df = features_df[features_df['away_games_played']]
+    
+    feature_columns = [
+        'home_avg_corners_last_5', 'home_avg_fouls_last_5',
+        'home_avg_yellow_last_5', 'home_avg_red_last_5', 'home_avg_free_kicks_last_5',
+        'home_avg_shots_last_5', 'home_avg_possession_last_5',
+        
+        'away_avg_corners_last_5', 'away_avg_fouls_last_5',
+        'away_avg_yellow_last_5', 'away_avg_red_last_5', 'away_avg_free_kicks_last_5',
+        'away_avg_shots_last_5', 'away_avg_possession_last_5',
+    ]
+    
+    X = features_df[feature_columns].fillna(0).copy()
+    
+    targets = {
+        'corner_kicks': (features_df['home_corner_kicks'], features_df['away_corner_kicks']),
+        'fouls': (features_df['home_fouls'], features_df['away_fouls']),
+        'yellow_cards': (features_df['home_yellow_cards'], features_df['away_yellow_cards']),
+        'red_cards': (features_df['home_red_cards'], features_df['away_red_cards']),
+        'free_kicks': (features_df['home_free_kicks'], features_df['away_free_kicks']), 
+    }
+    return X, targets, feature_columns

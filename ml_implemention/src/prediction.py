@@ -38,25 +38,19 @@ def get_team_current_form(team_name, n_games=5):
         'points': []
     }
     
-    def to_float(val, default):
-        if val is None or val == '':
-            return default
-        try:
-            return float(val)
-        except (ValueError, TypeError):
-            return default
+
 
     for _, row in team_matches.iterrows():
         if row['home_team_name'] == team_name:
 
-            stats['goals_for'].append(to_float(row['home_score'], 0))
-            stats['goals_against'].append(to_float(row['away_score'], 0))
-            stats['xg'].append(to_float(row.get('home_xg'), 0))
-            stats['shots'].append(to_float(row.get('home_total_shots'), 10))
-            stats['possession'].append(to_float(row.get('home_ball_possession'), 50))
+            stats['goals_for'].append( (row['home_score'], 0))
+            stats['goals_against'].append( (row['away_score'], 0))
+            stats['xg'].append( (row.get('home_xg'), 0))
+            stats['shots'].append( (row.get('home_total_shots'), 10))
+            stats['possession'].append( (row.get('home_ball_possession'), 50))
             
-            home_score = to_float(row['home_score'], 0)
-            away_score = to_float(row['away_score'], 0)
+            home_score =  (row['home_score'], 0)
+            away_score =  (row['away_score'], 0)
             if home_score > away_score:
                 stats['wins'].append(1)
                 stats['points'].append(3)
@@ -68,14 +62,14 @@ def get_team_current_form(team_name, n_games=5):
                 stats['points'].append(1)
         else:
 
-            stats['goals_for'].append(to_float(row['away_score'], 0))
-            stats['goals_against'].append(to_float(row['home_score'], 0))
-            stats['xg'].append(to_float(row.get('away_xg'), 0))
-            stats['shots'].append(to_float(row.get('away_total_shots'), 10))
-            stats['possession'].append(to_float(row.get('away_ball_possession'), 50))
+            stats['goals_for'].append( (row['away_score'], 0))
+            stats['goals_against'].append( (row['home_score'], 0))
+            stats['xg'].append( (row.get('away_xg'), 0))
+            stats['shots'].append( (row.get('away_total_shots'), 10))
+            stats['possession'].append( (row.get('away_ball_possession'), 50))
             
-            home_score = to_float(row['home_score'], 0)
-            away_score = to_float(row['away_score'], 0)
+            home_score =  (row['home_score'], 0)
+            away_score =  (row['away_score'], 0)
             if away_score > home_score:
                 stats['wins'].append(1)
                 stats['points'].append(3)
@@ -149,29 +143,3 @@ def predict_match(home_team: str, away_team: str, model_path='models/match_predi
         'away_form': away_form
     }
 
-
-def main():
-
-    print("  EKSTRAKLASA MATCH PREDICTOR")
-
-    
-    home_team = input("\nEnter HOME team name: ").strip()
-    away_team = input("Enter AWAY team name: ").strip()
-    
-    print(f"\nPredicting: {home_team} vs {away_team}...")
-    
-    result = predict_match(home_team, away_team)
-    
-    if result is None:
-        print("Error: Could not find one or both teams!")
-        return
-
-    print(f"\n  PREDICTION: {result['prediction']}")
-    print(f"\n  PROBABILITIES:")
-    print(f"    Home Win ({home_team}): {result['probabilities']['Home Win']}")
-    print(f"    Draw:                   {result['probabilities']['Draw']}")
-    print(f"    Away Win ({away_team}): {result['probabilities']['Away Win']}")
-
-
-if __name__ == "__main__":
-    main()
