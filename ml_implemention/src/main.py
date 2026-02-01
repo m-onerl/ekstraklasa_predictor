@@ -1,4 +1,7 @@
-from .prediction import predict_match
+from .prediction import predict_match, get_all_teams
+from .model_training import MatchPredictor
+from .data_loading import load_match_data
+from .data_preparation import prepare_data, prepare_data_stats
 import logging
 
 logger = logging.getLogger(__name__)
@@ -7,27 +10,99 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-def main():
 
-    logger.info("  EKSTRAKLASA MATCH PREDICTOR")
 
+def train_models():
+    print("\nLoading data...")
+    df = load_match_data()
     
+    predictor = MatchPredictor()
+    
+    print("Training result prediction model...")
+    X, y, feature_columns = prepare_data(df)
+    predictor.train(X, y, feature_columns)
+    
+    print("Training stats prediction models...")
+    X_stats, targets, stats_features = prepare_data_stats(df)
+    predictor.train_stats(X_stats, targets, stats_features)
+    
+    predictor.save()
+    print("All models trained and saved!")
+
+
+def show_menu():
+    print("\n" + "="*50)
+    print("   EKSTRAKLASA MATCH PREDICTOR")
+    print("="*50)
+    print("\n  1. Predict match")
+    print("  2. Train models")
+    print("  3. Exit")
+    return input("\nChoose option (1-3): ").strip()
+
+
+def predict():
     home_team = input("\nEnter HOME team name: ").strip()
     away_team = input("Enter AWAY team name: ").strip()
     
-    logger.info(f"\nPredicting: {home_team} vs {away_team}...")
+    print(f"\nPredicting: {home_team} vs {away_team}...")
     
     result = predict_match(home_team, away_team)
     
     if result is None:
-        logger.info("Error: Could not find one or both teams!")
+        print("Error: Could not find one or both teams or model not trained!")
         return
 
-    logger.info(f"\n  PREDICTION: {result['prediction']}")
-    logger.info(f"\n  PROBABILITIES:")
-    logger.info(f"    Home Win ({home_team}): {result['probabilities']['Home Win']}")
-    logger.info(f"    Draw:                   {result['probabilities']['Draw']}")
-    logger.info(f"    Away Win ({away_team}): {result['probabilities']['Away Win']}")
+    # Match result 
+    print("\n" + "="*50)
+    print("   MATCH RESULT PREDICTION")
+    print("="*50)
+    print(f"\n  Prediction: {result['prediction']}")
+    print(f"\n  Probabilities:")
+    print(f"     Home Win ({home_team}): {result['probabilities']['Home Win']}")
+    print(f"     Draw:                   {result['probabilities']['Draw']}")
+    print(f"     Away Win ({away_team}): {result['probabilities']['Away Win']}")
+
+    # Stats predictions
+    if 'stats_predictions' in result:
+        print("\n" + "="*50)
+        print("   STATISTICS PREDICTIONS")
+        print("="*50)
+        
+        stats = result['stats_predictions']
+        
+        stat_names = {
+            'corner_kicks': 'Corner Kicks',
+            'fouls': 'Fouls',
+            'yellow_cards': 'Yellow Cards',
+            'red_cards': 'Red Cards',
+            'free_kicks': 'Free Kicks'
+        }
+        
+        print(f"\n  {'Statistic':<20} {'Home':>8} {'Away':>8} {'Total':>8}")
+        print("  " + "-"*46)
+        
+        for stat, values in stats.items():
+            name = stat_names.get(stat, stat)
+            print(f"  {name:<20} {values['home']:>8} {values['away']:>8} {values['total']:>8}")
+    else:
+        print("\nStats models not trained. You have to try enter 2 and make a traning.")
+    
+    print("\n" + "="*50)
+
+
+def main():
+    while True:
+        choice = show_menu()
+        
+        if choice == '1':
+            predict()
+        elif choice == '2':
+            train_models()
+        elif choice == '3':
+            print("\nSeee you!")
+            break
+        else:
+            print("That option is not exist! Try again :)")
 
 
 if __name__ == "__main__":
