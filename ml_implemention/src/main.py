@@ -2,7 +2,10 @@ from .prediction import predict_match, get_all_teams
 from .model_training import MatchPredictor
 from .data_loading import load_match_data
 from .data_preparation import prepare_data, prepare_data_stats
+
+from tkinter import *
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -10,8 +13,8 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-
-
+t.geometry('1400x750')
+        
 def train_models():
     print("\nLoading data...")
     df = load_match_data()
@@ -28,82 +31,79 @@ def train_models():
     
     predictor.save()
     print("All models trained and saved!")
-
-
-def show_menu():
-    print("\n" + "="*50)
-    print("   EKSTRAKLASA MATCH PREDICTOR")
-    print("="*50)
-    print("\n  1. Predict match")
-    print("  2. Train models")
-    print("  3. Exit")
-    return input("\nChoose option (1-3): ").strip()
-
-
-def predict():
-    home_team = input("\nEnter HOME team name: ").strip()
-    away_team = input("Enter AWAY team name: ").strip()
     
-    print(f"\nPredicting: {home_team} vs {away_team}...")
     
-    result = predict_match(home_team, away_team)
-    
-    if result is None:
-        print("Error: Could not find one or both teams or model not trained!")
-        return
+class PredictorGui:    
+    def __init__(self, root):
+        self.root = root
+        self.root.title("EKSTRAKLASA MATCH PREDICTOR")
+        self.root
 
-    # Match result 
-    print("\n" + "="*50)
-    print("   MATCH RESULT PREDICTION")
-    print("="*50)
-    print(f"\n  Prediction: {result['prediction']}")
-    print(f"\n  Probabilities:")
-    print(f"     Home Win ({home_team}): {result['probabilities']['Home Win']}")
-    print(f"     Draw:                   {result['probabilities']['Draw']}")
-    print(f"     Away Win ({away_team}): {result['probabilities']['Away Win']}")
 
-    # Stats predictions
-    if 'stats_predictions' in result:
+    def show_menu():
         print("\n" + "="*50)
-        print("   STATISTICS PREDICTIONS")
+        print("   EKSTRAKLASA MATCH PREDICTOR")
         print("="*50)
+        print("\n  1. Predict match")
+        print("  2. Train models")
+        print("  3. Exit")
+        return input("\nChoose option (1-3): ").strip()
+
+
+    def predict():
+        home_team = input("\nEnter HOME team name: ").strip()
+        away_team = input("Enter AWAY team name: ").strip()
         
-        stats = result['stats_predictions']
+        print(f"\nPredicting: {home_team} vs {away_team}...")
         
-        stat_names = {
-            'corner_kicks': 'Corner Kicks',
-            'fouls': 'Fouls',
-            'yellow_cards': 'Yellow Cards',
-            'red_cards': 'Red Cards',
-            'free_kicks': 'Free Kicks'
-        }
+        result = predict_match(home_team, away_team)
         
-        print(f"\n  {'Statistic':<20} {'Home':>8} {'Away':>8} {'Total':>8}")
-        print("  " + "-"*46)
+        if result is None:
+            print("Error: Could not find one or both teams or model not trained!")
+            return
+
+        # Match result 
+        print("\n" + "="*50)
+        print("   MATCH RESULT PREDICTION")
+        print("="*50)
+        print(f"\n  Prediction: {result['prediction']}")
+        print(f"\n  Probabilities:")
+        print(f"     Home Win ({home_team}): {result['probabilities']['Home Win']}")
+        print(f"     Draw:                   {result['probabilities']['Draw']}")
+        print(f"     Away Win ({away_team}): {result['probabilities']['Away Win']}")
+
+        # Stats predictions
+        if 'stats_predictions' in result:
+            print("\n" + "="*50)
+            print("   STATISTICS PREDICTIONS")
+            print("="*50)
+            
+            stats = result['stats_predictions']
+            
+            stat_names = {
+                'corner_kicks': 'Corner Kicks',
+                'fouls': 'Fouls',
+                'yellow_cards': 'Yellow Cards',
+                'red_cards': 'Red Cards',
+                'free_kicks': 'Free Kicks'
+            }
+            
+            print(f"\n  {'Statistic':<20} {'Home':>8} {'Away':>8} {'Total':>8}")
+            print("  " + "-"*46)
+            
+            for stat, values in stats.items():
+                name = stat_names.get(stat, stat)
+                print(f"  {name:<20} {values['home']:>8} {values['away']:>8} {values['total']:>8}")
+        else:
+            print("\nStats models not trained. You have to try enter 2 and make a traning.")
         
-        for stat, values in stats.items():
-            name = stat_names.get(stat, stat)
-            print(f"  {name:<20} {values['home']:>8} {values['away']:>8} {values['total']:>8}")
-    else:
-        print("\nStats models not trained. You have to try enter 2 and make a traning.")
-    
-    print("\n" + "="*50)
+        print("\n" + "="*50)
 
 
 def main():
-    while True:
-        choice = show_menu()
-        
-        if choice == '1':
-            predict()
-        elif choice == '2':
-            train_models()
-        elif choice == '3':
-            print("\nSeee you!")
-            break
-        else:
-            print("That option is not exist! Try again :)")
-
-
+    root = Tk()
+    app = PredictorGui(root)
+    root.mainloop()
+    
 if __name__ == "__main__":
     main()
