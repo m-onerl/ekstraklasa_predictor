@@ -241,8 +241,8 @@ def prepare_data_stats(df, min_games = 3, n_games = 5):
     
     features_df = calculate_rolling_stats(df, n_games = n_games)
     
-    features_df = features_df[features_df['home_games_played']]
-    features_df = features_df[features_df['away_games_played']]
+    features_df = features_df[features_df['home_games_played'] >= min_games]
+    features_df = features_df[features_df['away_games_played'] >= min_games]
     
     feature_columns = [
         'home_avg_corners_last_5', 'home_avg_fouls_last_5',
