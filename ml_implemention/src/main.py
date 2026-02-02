@@ -13,7 +13,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-t.geometry('1400x750')
+
         
 def train_models():
     print("\nLoading data...")
@@ -37,7 +37,7 @@ class PredictorGui:
     def __init__(self, root):
         self.root = root
         self.root.title("EKSTRAKLASA MATCH PREDICTOR")
-        self.root
+        self.root.geometry("1400x700")
 
 
     def show_menu():
