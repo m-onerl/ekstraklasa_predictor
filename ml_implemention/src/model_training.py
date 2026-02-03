@@ -21,8 +21,6 @@ class MatchPredictor:
         'corner_kicks',
         'fouls',
         'yellow_cards', 
-        'red_cards',
-        'free_kicks'
     ]
     
     def __init__(self):

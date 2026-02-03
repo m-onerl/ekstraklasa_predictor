@@ -48,8 +48,7 @@ def get_team_current_form(team_name, n_games=5):
         'corners': [],
         'fouls': [],
         'yellow_cards': [],
-        'red_cards': [],
-        'free_kicks': [],
+
     }
 
     for _, row in team_matches.iterrows():
@@ -62,8 +61,7 @@ def get_team_current_form(team_name, n_games=5):
             stats['corners'].append(to_float(row.get('home_corner_kicks'), 5))
             stats['fouls'].append(to_float(row.get('home_fouls'), 12))
             stats['yellow_cards'].append(to_float(row.get('home_yellow_cards'), 2))
-            stats['red_cards'].append(to_float(row.get('home_red_cards'), 0))
-            stats['free_kicks'].append(to_float(row.get('home_free_kicks'), 12))
+
             
             home_score = to_float(row['home_score'], 0)
             away_score = to_float(row['away_score'], 0)
@@ -85,8 +83,7 @@ def get_team_current_form(team_name, n_games=5):
             stats['corners'].append(to_float(row.get('away_corner_kicks'), 5))
             stats['fouls'].append(to_float(row.get('away_fouls'), 12))
             stats['yellow_cards'].append(to_float(row.get('away_yellow_cards'), 2))
-            stats['red_cards'].append(to_float(row.get('away_red_cards'), 0))
-            stats['free_kicks'].append(to_float(row.get('away_free_kicks'), 12))
+
             
             home_score = to_float(row['home_score'], 0)
             away_score = to_float(row['away_score'], 0)
@@ -112,8 +109,7 @@ def get_team_current_form(team_name, n_games=5):
         'avg_corners': np.mean(stats['corners']),
         'avg_fouls': np.mean(stats['fouls']),
         'avg_yellow': np.mean(stats['yellow_cards']),
-        'avg_red': np.mean(stats['red_cards']),
-        'avg_free_kicks': np.mean(stats['free_kicks']),
+
     }
 
 
@@ -173,16 +169,12 @@ def predict_match(home_team: str, away_team: str, model_path='models/match_predi
             'home_avg_corners_last_5': home_form['avg_corners'],
             'home_avg_fouls_last_5': home_form['avg_fouls'],
             'home_avg_yellow_last_5': home_form['avg_yellow'],
-            'home_avg_red_last_5': home_form['avg_red'],
-            'home_avg_free_kicks_last_5': home_form['avg_free_kicks'],
             'home_avg_shots_last_5': home_form['avg_shots'],
             'home_avg_possession_last_5': home_form['avg_possession'],
-            
+
             'away_avg_corners_last_5': away_form['avg_corners'],
             'away_avg_fouls_last_5': away_form['avg_fouls'],
             'away_avg_yellow_last_5': away_form['avg_yellow'],
-            'away_avg_red_last_5': away_form['avg_red'],
-            'away_avg_free_kicks_last_5': away_form['avg_free_kicks'],
             'away_avg_shots_last_5': away_form['avg_shots'],
             'away_avg_possession_last_5': away_form['avg_possession'],
         }])
