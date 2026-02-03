@@ -20,7 +20,10 @@ class MatchPredictor:
     STATS_TO_PREDICT = [
         'corner_kicks',
         'fouls',
-        'yellow_cards', 
+        'yellow_cards',
+        'ball_possession',
+        'total_shots',
+        'shots_on_target',
     ]
     
     def __init__(self):
