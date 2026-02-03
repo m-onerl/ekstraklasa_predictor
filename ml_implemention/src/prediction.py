@@ -173,12 +173,14 @@ def predict_match(home_team: str, away_team: str, model_path='models/match_predi
             'home_avg_yellow_last_5': home_form['avg_yellow'],
             'home_avg_shots_last_5': home_form['avg_shots'],
             'home_avg_possession_last_5': home_form['avg_possession'],
+            'home_avg_shots_on_target_last_5': home_form['avg_shots_on_target'],
 
             'away_avg_corners_last_5': away_form['avg_corners'],
             'away_avg_fouls_last_5': away_form['avg_fouls'],
             'away_avg_yellow_last_5': away_form['avg_yellow'],
             'away_avg_shots_last_5': away_form['avg_shots'],
             'away_avg_possession_last_5': away_form['avg_possession'],
+            'away_avg_shots_on_target_last_5': away_form['avg_shots_on_target'],
         }])
         
         result['stats_predictions'] = predictor.predict_stats(stats_features)
