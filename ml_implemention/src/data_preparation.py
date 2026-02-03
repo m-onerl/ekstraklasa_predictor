@@ -81,7 +81,7 @@ def calculate_rolling_stats(df, n_games = 5):
             away_avg_corners = np.mean([h['corner_kicks'] for h in recent_away])
             away_avg_fouls = np.mean([h['fouls'] for h in recent_away])
             away_avg_yellow = np.mean([h['yellow_cards'] for h in recent_away])
-            away_avg_shots_on_target = np.mean([h['shots_on_target'] for h in recent_home])
+            away_avg_shots_on_target = np.mean([h['shots_on_target'] for h in recent_away])
             
             
         else:
@@ -235,6 +235,7 @@ def prepare_data(df, min_games = 3, n_games = 5):
         axis=1  
     )
     return X, y, feature_columns
+
 
 def prepare_data_stats(df, min_games = 3, n_games = 5):
     

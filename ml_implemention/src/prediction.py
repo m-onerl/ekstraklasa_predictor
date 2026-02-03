@@ -48,7 +48,7 @@ def get_team_current_form(team_name, n_games=5):
         'corners': [],
         'fouls': [],
         'yellow_cards': [],
-
+        'shots_on_target': [],
     }
 
     for _, row in team_matches.iterrows():
@@ -61,7 +61,7 @@ def get_team_current_form(team_name, n_games=5):
             stats['corners'].append(to_float(row.get('home_corner_kicks'), 5))
             stats['fouls'].append(to_float(row.get('home_fouls'), 12))
             stats['yellow_cards'].append(to_float(row.get('home_yellow_cards'), 2))
-
+            stats['shots_on_target'].append(to_float(row.get('home_shots_on_target'), 4))
             
             home_score = to_float(row['home_score'], 0)
             away_score = to_float(row['away_score'], 0)
@@ -83,7 +83,7 @@ def get_team_current_form(team_name, n_games=5):
             stats['corners'].append(to_float(row.get('away_corner_kicks'), 5))
             stats['fouls'].append(to_float(row.get('away_fouls'), 12))
             stats['yellow_cards'].append(to_float(row.get('away_yellow_cards'), 2))
-
+            stats['shots_on_target'].append(to_float(row.get('away_shots_on_target'), 4))
             
             home_score = to_float(row['home_score'], 0)
             away_score = to_float(row['away_score'], 0)
@@ -109,7 +109,7 @@ def get_team_current_form(team_name, n_games=5):
         'avg_corners': np.mean(stats['corners']),
         'avg_fouls': np.mean(stats['fouls']),
         'avg_yellow': np.mean(stats['yellow_cards']),
-
+        'avg_shots_on_target': np.mean(stats['shots_on_target']),
     }
 
 
@@ -132,6 +132,7 @@ def predict_match(home_team: str, away_team: str, model_path='models/match_predi
         'home_avg_possession_last_5': home_form['avg_possession'],
         'home_win_rate_last_5': home_form['win_rate'],
         'home_ppg_last_5': home_form['ppg'],
+        'home_avg_shots_on_target_last_5': home_form['avg_shots_on_target'],
         
         'away_avg_goals_last_5': away_form['avg_goals'],
         'away_avg_conceded_last_5': away_form['avg_conceded'],
@@ -140,6 +141,7 @@ def predict_match(home_team: str, away_team: str, model_path='models/match_predi
         'away_avg_possession_last_5': away_form['avg_possession'],
         'away_win_rate_last_5': away_form['win_rate'],
         'away_ppg_last_5': away_form['ppg'],
+        'away_avg_shots_on_target_last_5': away_form['avg_shots_on_target'],
         
         'form_diff': home_form['win_rate'] - away_form['win_rate'],
         'xg_diff': home_form['avg_xg'] - away_form['avg_xg'],
