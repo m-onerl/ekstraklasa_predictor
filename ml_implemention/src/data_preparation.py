@@ -248,10 +248,12 @@ def prepare_data_stats(df, min_games = 3, n_games = 5):
         'home_avg_corners_last_5', 'home_avg_fouls_last_5',
         'home_avg_yellow_last_5', 
         'home_avg_shots_last_5', 'home_avg_possession_last_5',
+        'home_avg_shots_on_target_last_5',
         
         'away_avg_corners_last_5', 'away_avg_fouls_last_5',
         'away_avg_yellow_last_5', 
         'away_avg_shots_last_5', 'away_avg_possession_last_5',
+        'away_avg_shots_on_target_last_5',
     ]
     
     X = features_df[feature_columns].fillna(0).copy()
@@ -260,5 +262,8 @@ def prepare_data_stats(df, min_games = 3, n_games = 5):
         'corner_kicks': (features_df['home_corner_kicks'], features_df['away_corner_kicks']),
         'fouls': (features_df['home_fouls'], features_df['away_fouls']),
         'yellow_cards': (features_df['home_yellow_cards'], features_df['away_yellow_cards']),
+        'ball_possession': (features_df['home_ball_possession'], features_df['away_ball_possession']),
+        'total_shots': (features_df['home_total_shots'], features_df['away_total_shots']),
+        'shots_on_target': (features_df['home_shots_on_target'], features_df['away_shots_on_target']),
     }
     return X, targets, feature_columns
