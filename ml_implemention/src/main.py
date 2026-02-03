@@ -134,8 +134,9 @@ class PredictorGui:
                     'corner_kicks': 'Corner Kicks',
                     'fouls': 'Fouls',
                     'yellow_cards': 'Yellow Cards',
-                    'red_cards': 'Red Cards',
-                    'free_kicks': 'Free Kicks'
+                    'ball_possession': 'Ball Possession %',
+                    'total_shots': 'Total Shots',
+                    'shots_on_target': 'Shots on Target',
                 }
                 
                 for stat, values in result['stats_predictions'].items():
