@@ -5,8 +5,8 @@ import logging
 from playwright.async_api import async_playwright
 from psycopg import connect
 
-from database.src.db_queries import DatabaseOperations
-from database.src.db_connect import CONNECTION_INFO
+from database.db_queries import DatabaseOperations
+from database.db_connect import CONNECTION_INFO
 from .get_statistics import Statistic
 
 

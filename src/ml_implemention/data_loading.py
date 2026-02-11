@@ -1,6 +1,6 @@
 import pandas as pd
 from psycopg import connect
-from database.src.db_connect import CONNECTION_INFO
+from ..database.db_connect import CONNECTION_INFO
 import logging
 
 logger = logging.getLogger(__name__)
