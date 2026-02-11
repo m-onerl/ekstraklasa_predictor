@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import logging
 
-from ml_implemention.data_loading import load_match_data
-from ml_implemention.model_training import MatchPredictor
+from .data_loading import load_match_data
+from .model_training import MatchPredictor
 
 logger = logging.getLogger(__name__)
 
