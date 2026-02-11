@@ -2,9 +2,8 @@ import pandas as pd
 import numpy as np
 import logging
 
-from ml_implemention.src.data_loading import load_match_data
-from ml_implemention.src.data_preparation import calculate_rolling_stats
-from ml_implemention.src.model_training import MatchPredictor
+from ml_implemention.data_loading import load_match_data
+from ml_implemention.model_training import MatchPredictor
 
 logger = logging.getLogger(__name__)
 
