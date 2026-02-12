@@ -1,6 +1,5 @@
-import asyncio
 import logging
-from scraper.src.scraper import scraper
+from src.ml_implemention.main import main
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -9,11 +8,5 @@ logging.basicConfig(
 )
 
 
-async def main():
-    """Main function to scrape and save data to database"""
-    await scraper(start_season_year=2012)
-
-
-
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
