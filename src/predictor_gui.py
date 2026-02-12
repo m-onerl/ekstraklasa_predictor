@@ -3,8 +3,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter import *
 
-from ml_implemention.prediction import predict_match, get_all_teams
-from ml_implemention.model_training import train_models
+from .ml_implemention.prediction import predict_match, get_all_teams
+from .ml_implemention.model_training import train_models
 import logging
 
 logger = logging.getLogger(__name__)

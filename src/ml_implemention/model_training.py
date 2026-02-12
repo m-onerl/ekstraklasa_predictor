@@ -2,8 +2,8 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report, mean_absolute_error
 
-from data_preparation import prepare_data, prepare_data_stats
-from data_loading import load_match_data 
+from .data_preparation import prepare_data, prepare_data_stats
+from .data_loading import load_match_data 
 
 import joblib
 import os
@@ -16,6 +16,21 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+def train_models():
+        
+        df = load_match_data()
+        
+        predictor = MatchPredictor()
+        
+
+        X, y, feature_columns = prepare_data(df)
+        predictor.train(X, y, feature_columns)
+        
+        X_stats, targets, stats_features = prepare_data_stats(df)
+        predictor.train_stats(X_stats, targets, stats_features)
+        
+        predictor.save()
 
 class MatchPredictor:
     
@@ -41,23 +56,6 @@ class MatchPredictor:
         self.stats_scalers = {}
         self.stats_feature_names = None
         
-
-    def train_models():
-        
-
-        df = load_match_data()
-        
-        predictor = MatchPredictor()
-        
-
-        X, y, feature_columns = prepare_data(df)
-        predictor.train(X, y, feature_columns)
-        
-
-        X_stats, targets, stats_features = prepare_data_stats(df)
-        predictor.train_stats(X_stats, targets, stats_features)
-        
-        predictor.save()
 
     
     def train(self, X_train, y_train, feature_names):

@@ -1,6 +1,5 @@
-from predictor_gui import PredictorGui
+from .predictor_gui import PredictorGui
 import tkinter as tk
-from tkinter import *
 
 
 def main():
