@@ -19,10 +19,8 @@ logging.basicConfig(
 
 def train_models():
         
-        df = load_match_data()
-        
         predictor = MatchPredictor()
-        
+        df = load_match_data()
 
         X, y, feature_columns = prepare_data(df)
         predictor.train(X, y, feature_columns)
@@ -31,6 +29,7 @@ def train_models():
         predictor.train_stats(X_stats, targets, stats_features)
         
         predictor.save()
+        return predictor
 
 class MatchPredictor:
     
@@ -56,7 +55,7 @@ class MatchPredictor:
         self.stats_scalers = {}
         self.stats_feature_names = None
         
-
+    
     
     def train(self, X_train, y_train, feature_names):
 
@@ -177,3 +176,15 @@ class MatchPredictor:
     
     def has_stats_models(self):
         return len(self.stats_models) > 0
+    
+    def train_models(self):
+        
+        df = load_match_data()
+
+        X, y, feature_columns = prepare_data(df)
+        self.train(X, y, feature_columns)
+        
+        X_stats, targets, stats_features = prepare_data_stats(df)
+        self.train_stats(X_stats, targets, stats_features)
+        
+        self.save()
