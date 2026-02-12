@@ -1,13 +1,11 @@
-from .prediction import predict_match, get_all_teams
-from .model_training import MatchPredictor
-from .data_loading import load_match_data
-from .data_preparation import prepare_data, prepare_data_stats
 
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter import *
-import logging
 
+from ml_implemention.prediction import predict_match, get_all_teams
+from ml_implemention.model_training import train_models
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -16,25 +14,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-        
-def train_models():
-    print("\nLoading data...")
-    df = load_match_data()
-    
-    predictor = MatchPredictor()
-    
-    print("Training result prediction model...")
-    X, y, feature_columns = prepare_data(df)
-    predictor.train(X, y, feature_columns)
-    
-    print("Training stats prediction models...")
-    X_stats, targets, stats_features = prepare_data_stats(df)
-    predictor.train_stats(X_stats, targets, stats_features)
-    
-    predictor.save()
-    print("All models trained and saved!")
-    
-    
 class PredictorGui:    
     def __init__(self, root):
         self.root = root
@@ -148,13 +127,3 @@ class PredictorGui:
                     ))
         except Exception as e:
             messagebox.showerror("Error", f"Prediction failed: {e}")
-
-
-def main():
-    root = tk.Tk()
-    app = PredictorGui(root)
-    root.mainloop()
-
-
-if __name__ == "__main__":
-    main()
