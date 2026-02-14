@@ -17,20 +17,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-def train_models():
-        
-        predictor = MatchPredictor()
-        df = load_match_data()
-
-        X, y, feature_columns = prepare_data(df)
-        predictor.train(X, y, feature_columns)
-        
-        X_stats, targets, stats_features = prepare_data_stats(df)
-        predictor.train_stats(X_stats, targets, stats_features)
-        
-        predictor.save()
-        return predictor
-
 class MatchPredictor:
     
     STATS_TO_PREDICT = [
