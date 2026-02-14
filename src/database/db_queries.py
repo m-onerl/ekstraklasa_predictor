@@ -107,6 +107,10 @@ class DatabaseOperations:
             if result:
                 return result[0]
             raise
+        
+    @staticmethod
+    def check_match_exist(cur, match_id = None, home_team = None, away_team = None ):
+        pass
 
     @staticmethod
     def get_or_create_stadium(cur, stadium_name, city):

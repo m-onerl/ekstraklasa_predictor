@@ -71,8 +71,7 @@ class PredictorGui:
     def scrap(self):
         self.result_var.ser("Scraping the newest match from fleshscore.pl.. Please wait")
         self.root.update()
-        
-            
+        #TODO: add logic of checking existing matches and add when is not in database 
         
         pass
 

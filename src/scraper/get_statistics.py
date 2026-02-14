@@ -67,7 +67,7 @@ class Statistic:
     async def extract_match_data(match_page):
         match_data = {}
         
-        try:
+        try:   
             date_element = await match_page.query_selector('.duelParticipant_startTime')
             if date_element:
                 match_data['date_time'] = (await date_element.inner_text()).strip()
