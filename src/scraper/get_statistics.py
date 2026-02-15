@@ -68,10 +68,12 @@ class Statistic:
         match_data = {}
         
         try:   
-            date_element = await match_page.query_selector('.duelParticipant_startTime')
+            date_element = await match_page.query_selector('.duelParticipant__startTime')
             if date_element:
                 match_data['date_time'] = (await date_element.inner_text()).strip()
-                
+            else:
+                logger.warning("Could not find date_time element")
+
             # Extract home team with multiple selector attempts
             home_team_element = await match_page.query_selector('.duelParticipant__home .participant__participantName a')
             if not home_team_element:

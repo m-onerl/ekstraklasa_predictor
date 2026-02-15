@@ -1,15 +1,12 @@
 import sys
 from pathlib import Path
 
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
-
 import pytest
 import logging
 from playwright.async_api import async_playwright
-from scraper.src.scraper import Scraper
-from database.src.db_queries import DatabaseOperations
-from database.src.db_connect import CONNECTION_INFO
+from ..src.scraper.get_statistics import Statistic
+from ..src.database.db_queries import DatabaseOperations
+from ..src.database.db_connect import CONNECTION_INFO
 from psycopg import connect
 
 logging.basicConfig(
@@ -39,7 +36,7 @@ async def test_scrape_single_match():
             
             logger.info("Page loaded, extracting match data...")
 
-            match_data = await Scraper.extract_match_data(match_page)
+            match_data = await Statistic.extract_match_data(match_page)
             match_data['url'] = TEST_MATCH_URL
             match_data['match_id'] = TEST_MATCH_URL.split('/')[-2] if '/' in TEST_MATCH_URL else TEST_MATCH_URL
             match_data['season'] = "Test Season"
@@ -83,7 +80,7 @@ async def test_save_into_database():
 
             logger.info("Page loaded ")
             
-            match_data = await Scraper.extract_match_data(match_page)
+            match_data = await Statistic.extract_match_data(match_page)
             match_data['url'] = TEST_MATCH_URL
             match_data['match_id'] = TEST_MATCH_URL.split('?mid=')[-1]
             match_data['season'] = "Test Season"
