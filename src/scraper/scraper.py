@@ -71,6 +71,17 @@ class Scraper:
                             home_team = match_data.get('home_team', 'Unknown')
                             away_team = match_data.get('away_team', 'Unknown')
                             logger.info(f"Inserting match {idx+1}/{len(season_matches)}: {home_team} vs {away_team}")
+                            # check if match already exists
+                            exists = DatabaseOperations.check_match_exist(
+                                cur,
+                                match_id=match_data.get('match_id'),
+                                home_team=match_data.get('home_team'),
+                                away_team=match_data.get('away_team')
+                            )
+                            if exists:
+                                logger.info(f"Skipping insert; match already exists: {home_team} vs {away_team}")
+                                continue
+
                             DatabaseOperations.insert_match_data(cur, match_data)
                             saved_count += 1
                         except Exception as e:
