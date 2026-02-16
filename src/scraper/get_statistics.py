@@ -67,11 +67,13 @@ class Statistic:
     async def extract_match_data(match_page):
         match_data = {}
         
-        try:
-            date_element = await match_page.query_selector('.duelParticipant_startTime')
+        try:   
+            date_element = await match_page.query_selector('.duelParticipant__startTime')
             if date_element:
                 match_data['date_time'] = (await date_element.inner_text()).strip()
-                
+            else:
+                logger.warning("Could not find date_time element")
+
             # Extract home team with multiple selector attempts
             home_team_element = await match_page.query_selector('.duelParticipant__home .participant__participantName a')
             if not home_team_element:
@@ -229,7 +231,7 @@ class Statistic:
                     base_url = base_url.rstrip('/')
                     
                     # construct statistics URL
-                    stats_url = f"{base_url}/szczegoly/statystyki/0/"
+                    stats_url = f"{base_url}/szczegoly/statystyki/ogolnie/"
                     if query_params:
                         stats_url += f"?{query_params}"
                     

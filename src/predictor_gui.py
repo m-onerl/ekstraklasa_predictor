@@ -1,13 +1,15 @@
-from .prediction import predict_match, get_all_teams
-from .model_training import MatchPredictor
-from .data_loading import load_match_data
-from .data_preparation import prepare_data, prepare_data_stats
 
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter import *
-import logging
+import asyncio
+import threading
 
+from .ml_implemention.prediction import predict_match, get_all_teams
+from .ml_implemention.model_training import MatchPredictor as predictor
+from .scraper.scraper import scraper
+
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -16,25 +18,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-        
-def train_models():
-    print("\nLoading data...")
-    df = load_match_data()
-    
-    predictor = MatchPredictor()
-    
-    print("Training result prediction model...")
-    X, y, feature_columns = prepare_data(df)
-    predictor.train(X, y, feature_columns)
-    
-    print("Training stats prediction models...")
-    X_stats, targets, stats_features = prepare_data_stats(df)
-    predictor.train_stats(X_stats, targets, stats_features)
-    
-    predictor.save()
-    print("All models trained and saved!")
-    
-    
 class PredictorGui:    
     def __init__(self, root):
         self.root = root
@@ -70,7 +53,7 @@ class PredictorGui:
         
         ttk.Button(btn_frame, text="Predict", command=self.predict).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Train Models", command=self.train).pack(side=tk.LEFT, padx=5)
-        
+        ttk.Button(btn_frame, text="Scrap Newest match", command=self.scrap).pack(side=tk.LEFT, padx=5)
 
         results_frame = ttk.LabelFrame(main_frame, text="Results", padding="10")
         results_frame.pack(fill=tk.BOTH, expand=True, pady=10)
@@ -86,14 +69,31 @@ class PredictorGui:
             self.tree.column(col, width=120, anchor='center')
         
         self.tree.pack(fill=tk.BOTH, expand=True)
+        
+    def scrap(self):
+        self.result_var.set("Starting scraper... Please wait")
+        self.root.update()
 
-    
+        def run_scraper():
+            try:
+                # async scraper in its own event loop
+                saved = asyncio.run(scraper(start_season_year=2012))
+                messagebox.showinfo("Scraper", f"Scraper finished! Saved {saved} matches")
+                self.result_var.set(f"Scraping finished: {saved} matches saved")
+            except Exception as e:
+                logger.error(f"Scraper error: {e}")
+                messagebox.showerror("Scraper", f"Scraper error: {e}")
+                self.result_var.set("Scraper failed")
+
+        thread = threading.Thread(target=run_scraper, daemon=True)
+        thread.start()
+        
     def train(self):
         self.result_var.set("Training models... Please wait")
         self.root.update()
         
         try:
-            train_models()
+            predictor.train_models()
             messagebox.showinfo("Success", "Models trained and saved!")
             self.result_var.set("Models trained successfully!")
         except Exception as e:
@@ -148,13 +148,3 @@ class PredictorGui:
                     ))
         except Exception as e:
             messagebox.showerror("Error", f"Prediction failed: {e}")
-
-
-def main():
-    root = tk.Tk()
-    app = PredictorGui(root)
-    root.mainloop()
-
-
-if __name__ == "__main__":
-    main()

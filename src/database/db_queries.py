@@ -107,6 +107,29 @@ class DatabaseOperations:
             if result:
                 return result[0]
             raise
+        
+    @staticmethod
+    def check_match_exist(cur, match_id = None, home_team = None, away_team = None ):
+        #check by match_id first
+        try:
+            if match_id:
+                cur.execute("SELECT match_id FROM matches WHERE match_id = %s", (match_id,))
+                if cur.fetchone():
+                    return True
+
+            # fallback: check by home/away team names
+            if home_team and away_team:
+                cur.execute(
+                    "SELECT m.match_id FROM matches m JOIN teams ht ON m.home_team_id = ht.team_id JOIN teams at ON m.away_team_id = at.team_id WHERE ht.name = %s AND at.name = %s",
+                    (home_team, away_team)
+                )
+                if cur.fetchone():
+                    return True
+
+            return False
+        except Exception as e:
+            logger.error(f"Error checking match existence: {e}")
+            return False
 
     @staticmethod
     def get_or_create_stadium(cur, stadium_name, city):
