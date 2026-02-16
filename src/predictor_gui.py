@@ -2,13 +2,12 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter import *
+import asyncio
+import threading
 
 from .ml_implemention.prediction import predict_match, get_all_teams
 from .ml_implemention.model_training import MatchPredictor as predictor
-import threading
-import subprocess
-import sys
-from .scraper.scraper import Scraper
+from .scraper.scraper import scraper
 
 import logging
 
@@ -77,26 +76,18 @@ class PredictorGui:
 
         def run_scraper():
             try:
-                cmd = [sys.executable, 'src/scraper/scraper.py']
-                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-                # stream output to logger
-                for line in proc.stdout:
-                    logger.info(line.rstrip())
-                ret = proc.wait()
-                if ret == 0:
-                    messagebox.showinfo("Scraper", "Scraper finished successfully")
-                    self.result_var.set("Scraping finished")
-                else:
-                    messagebox.showerror("Scraper", f"Scraper exited with code {ret}")
-                    self.result_var.set("Scraper failed")
+                # async scraper in its own event loop
+                saved = asyncio.run(scraper(start_season_year=2012))
+                messagebox.showinfo("Scraper", f"Scraper finished! Saved {saved} matches")
+                self.result_var.set(f"Scraping finished: {saved} matches saved")
             except Exception as e:
+                logger.error(f"Scraper error: {e}")
                 messagebox.showerror("Scraper", f"Scraper error: {e}")
                 self.result_var.set("Scraper failed")
 
         thread = threading.Thread(target=run_scraper, daemon=True)
         thread.start()
-
-    
+        
     def train(self):
         self.result_var.set("Training models... Please wait")
         self.root.update()
