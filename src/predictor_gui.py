@@ -5,7 +5,10 @@ from tkinter import *
 
 from .ml_implemention.prediction import predict_match, get_all_teams
 from .ml_implemention.model_training import MatchPredictor as predictor
-
+import threading
+import subprocess
+import sys
+from .scraper.scraper import Scraper
 
 import logging
 
@@ -69,11 +72,29 @@ class PredictorGui:
         self.tree.pack(fill=tk.BOTH, expand=True)
         
     def scrap(self):
-        self.result_var.ser("Scraping the newest match from fleshscore.pl.. Please wait")
+        self.result_var.set("Starting scraper... Please wait")
         self.root.update()
-        #TODO: add logic of checking existing matches and add when is not in database 
-        
-        pass
+
+        def run_scraper():
+            try:
+                cmd = [sys.executable, 'src/scraper/scraper.py']
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                # stream output to logger
+                for line in proc.stdout:
+                    logger.info(line.rstrip())
+                ret = proc.wait()
+                if ret == 0:
+                    messagebox.showinfo("Scraper", "Scraper finished successfully")
+                    self.result_var.set("Scraping finished")
+                else:
+                    messagebox.showerror("Scraper", f"Scraper exited with code {ret}")
+                    self.result_var.set("Scraper failed")
+            except Exception as e:
+                messagebox.showerror("Scraper", f"Scraper error: {e}")
+                self.result_var.set("Scraper failed")
+
+        thread = threading.Thread(target=run_scraper, daemon=True)
+        thread.start()
 
     
     def train(self):
