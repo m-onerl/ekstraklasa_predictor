@@ -231,7 +231,7 @@ class Statistic:
                     base_url = base_url.rstrip('/')
                     
                     # construct statistics URL
-                    stats_url = f"{base_url}/szczegoly/statystyki/0/"
+                    stats_url = f"{base_url}/szczegoly/statystyki/ogolnie/"
                     if query_params:
                         stats_url += f"?{query_params}"
                     

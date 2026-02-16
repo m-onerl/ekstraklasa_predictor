@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 
-TEST_MATCH_URL = "https://www.flashscore.pl/mecz/pilka-nozna/gornik-zabrze-2LH3Ywq4/korona-kielce-pp78XcbA/?mid=jkLJ5dBs"
+TEST_MATCH_URL = "https://www.flashscore.pl/mecz/pilka-nozna/korona-kielce-pp78XcbA/radomiak-radom-zD5nYhAT/?mid=voGiNirK"
 
 @pytest.mark.asyncio
 async def test_scrape_single_match():
