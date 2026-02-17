@@ -76,10 +76,11 @@ class Scraper:
                                 cur,
                                 match_id=match_data.get('match_id'),
                                 home_team=match_data.get('home_team'),
-                                away_team=match_data.get('away_team')
+                                away_team=match_data.get('away_team'),
+                                date_time=match_data.get('date_time')
                             )
                             if exists:
-                                logger.info(f"Skipping insert; match already exists: {home_team} vs {away_team}")
+                                logger.info(f"Skipping insert; match already exists: {home_team} vs {away_team} on {match_data.get('date_time')}")
                                 continue
 
                             DatabaseOperations.insert_match_data(cur, match_data)

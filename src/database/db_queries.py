@@ -109,19 +109,23 @@ class DatabaseOperations:
             raise
         
     @staticmethod
-    def check_match_exist(cur, match_id = None, home_team = None, away_team = None ):
-        #check by match_id first
+    def check_match_exist(cur, match_id=None, home_team=None, away_team=None, date_time=None):
+        """Check if match exists by match_id or by team names + date_time"""
         try:
+            # Check by match_id first (most reliable)
             if match_id:
                 cur.execute("SELECT match_id FROM matches WHERE match_id = %s", (match_id,))
                 if cur.fetchone():
                     return True
 
-            # fallback: check by home/away team names
-            if home_team and away_team:
+            # Fallback: check by home/away team names AND date_time
+            if home_team and away_team and date_time:
                 cur.execute(
-                    "SELECT m.match_id FROM matches m JOIN teams ht ON m.home_team_id = ht.team_id JOIN teams at ON m.away_team_id = at.team_id WHERE ht.name = %s AND at.name = %s",
-                    (home_team, away_team)
+                    """SELECT m.match_id FROM matches m 
+                       JOIN teams ht ON m.home_team_id = ht.team_id 
+                       JOIN teams at ON m.away_team_id = at.team_id 
+                       WHERE ht.name = %s AND at.name = %s AND m.date_time = %s""",
+                    (home_team, away_team, date_time)
                 )
                 if cur.fetchone():
                     return True
