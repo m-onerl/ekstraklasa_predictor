@@ -217,29 +217,52 @@ async def scraper(start_season_year=2012):
             
             # process matches sequentially (one by one) for reliability
             total_matches = len(match_urls)
-            for match_idx, url in enumerate(match_urls):
-                logger.info(f"Processing match {match_idx+1}/{total_matches}")
-                
-                match_data = await Scraper.scrape_single_match(browser, url, match_idx + 1, total_matches)
-                
-                if match_data:
-                    if not match_data.get('home_team') or not match_data.get('away_team'):
-                        logger.warning(f"Skipping match with missing team data: Home={match_data.get('home_team')}, Away={match_data.get('away_team')}, URL={match_data.get('url')}")
-                        continue
-                    
-                    # validate detailed statistics were extracted
-                    ds = match_data.get('detailed_statistic', {})
-                    if len(ds) == 0:
-                        logger.warning(f"Match {match_idx+1} has empty detailed_statistic!")
-                    
-                    match_data['season'] = season_name
-                    season_matches.append(match_data)
-                    logger.info(f"Match {match_idx+1} scraped successfully (detailed sections: {len(ds)})")
-                else:
-                    logger.error(f"Match {match_idx+1} failed to scrape")
-                
-                # delay between matches to avoid rate limiting
-                await asyncio.sleep(2)
+            duplicates = 0
+            
+            with connect(CONNECTION_INFO) as conn:
+                with conn.cursor() as cur:
+                    for match_idx, url in enumerate(match_urls):
+                        logger.info(f"Processing match {match_idx+1}/{total_matches}")
+                        
+                        match_data = await Scraper.scrape_single_match(browser, url, match_idx + 1, total_matches)
+                        
+                        if match_data:
+                            if not match_data.get('home_team') or not match_data.get('away_team'):
+                                logger.warning(f"Skipping match with missing team data: Home={match_data.get('home_team')}, Away={match_data.get('away_team')}, URL={match_data.get('url')}")
+                                continue
+                            
+                            # check if match already exists in database
+                            exists = DatabaseOperations.check_match_exist(
+                                cur,
+                                home_team=match_data.get('home_team'),
+                                away_team=match_data.get('away_team'),
+                                date_time=match_data.get('date_time')
+                            )
+                            
+                            if exists:
+                                duplicates += 1
+                                logger.info(f"Match already in DB: {match_data.get('home_team')} vs {match_data.get('away_team')} ({duplicates} consecutive duplicates)")
+                                if duplicates >= 4:
+                                    logger.info(f"Found {duplicates} consecutive duplicates, stopping season {season_name}")
+                                    break
+                                continue
+                            
+                            # reset counter when we got new match
+                            duplicates = 0
+                            
+                            # validate detailed statistics were extracted
+                            ds = match_data.get('detailed_statistic', {})
+                            if len(ds) == 0:
+                                logger.warning(f"Match {match_idx+1} has empty detailed_statistic!")
+                            
+                            match_data['season'] = season_name
+                            season_matches.append(match_data)
+                            logger.info(f"Match {match_idx+1} scraped successfully (detailed sections: {len(ds)})")
+                        else:
+                            logger.error(f"Match {match_idx+1} failed to scrape")
+                        
+                        # delay between matches to avoid rate limiting
+                        await asyncio.sleep(2)
                 
             # season to database
             saved = Scraper.save_season_to_database(season_matches, season_name)
@@ -256,4 +279,4 @@ async def scraper(start_season_year=2012):
         return total_saved_all_seasons
                 
 if __name__ == "__main__":
-    asyncio.run(scraper(start_season_year=2012))
+    asyncio.run(scraper)

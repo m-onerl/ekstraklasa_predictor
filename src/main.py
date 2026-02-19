@@ -4,7 +4,7 @@ import tkinter as tk
 
 def main():
     root = tk.Tk()
-    app = PredictorGui(root)
+    PredictorGui(root)
     root.mainloop()
 
 
