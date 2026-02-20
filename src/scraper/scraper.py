@@ -81,16 +81,9 @@ class Scraper:
                             )
                             # counting the duplicates when is 4 or more matches already exist close connection and saved matches
                             if exists:
-                                duplicates += 1
                                 logger.info(f'Skipping already existing match, {home_team} vs {away_team}')
-                                if duplicates >= 4:
-                                    logger.info(f'We got {duplicates}, stopping season scraping')
-                                    conn.commit()
-                                    return saved_count
                                 continue
                             
-                            # reset counter when we got match
-                            duplicates = 0
                             DatabaseOperations.insert_match_data(cur, match_data)
                             saved_count += 1
                         except Exception as e:
