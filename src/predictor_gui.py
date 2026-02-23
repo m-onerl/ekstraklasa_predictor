@@ -93,7 +93,7 @@ class PredictorGui:
         self.root.update()
         
         try:
-            predictor.train_models()
+            predictor().train_models()
             messagebox.showinfo("Success", "Models trained and saved!")
             self.result_var.set("Models trained successfully!")
         except Exception as e:

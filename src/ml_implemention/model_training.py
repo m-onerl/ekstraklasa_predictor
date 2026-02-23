@@ -81,15 +81,21 @@ class MatchPredictor:
             self.stats_scalers[stat] = StandardScaler()
             X_scaled = self.stats_scalers[stat].fit_transform(X)
             
-            self.stats_models[f'home_{stat}'] = RandomForestRegressor(
-                n_estimators=100, max_depth=10, random_state=42
-            )
-            self.stats_models[f'home_{stat}'].fit(X_scaled, y_home.fillna(0))
-            
-            self.stats_models[f'away_{stat}'] = RandomForestRegressor(
-                n_estimators=100, max_depth=10, random_state=42
-            )
-            self.stats_models[f'away_{stat}'].fit(X_scaled, y_away.fillna(0))
+            if stat == 'ball_possession':
+                self.stats_models[f'home_{stat}'] = RandomForestRegressor(
+                    n_estimators = 100, max_depth = 10, random_state = 42
+                )
+                self.stats_models[f'home_{stat}'].fit(X_scaled, y_home.fillna(50))
+            else:
+                self.stats_models[f'home_{stat}'] = RandomForestRegressor(
+                    n_estimators=100, max_depth=10, random_state=42
+                )
+                self.stats_models[f'home_{stat}'].fit(X_scaled, y_home.fillna(0))
+                
+                self.stats_models[f'away_{stat}'] = RandomForestRegressor(
+                    n_estimators=100, max_depth=10, random_state=42
+                )
+                self.stats_models[f'away_{stat}'].fit(X_scaled, y_away.fillna(0))
             
         logger.info("All stats models trained!")
     
@@ -100,15 +106,27 @@ class MatchPredictor:
         for stat in self.STATS_TO_PREDICT:
             X_scaled = self.stats_scalers[stat].transform(X)
             
-            home_pred = max(0, self.stats_models[f'home_{stat}'].predict(X_scaled)[0])
-            away_pred = max(0, self.stats_models[f'away_{stat}'].predict(X_scaled)[0])
+            if stat == 'ball_possession':
+                home_pred = self.stats_models[f'home_{stat}'].predict(X_scaled)[0]
+                home_pred = max(30, min(70, home_pred))
+                away_pred = 100 - home_pred
             
-            predictions[stat] = {
+                predictions[stat] = {
                 'home': round(home_pred, 1),
                 'away': round(away_pred, 1),
-                'total': round(home_pred + away_pred, 1)
-            }
-        
+                'total': 100.0
+                }
+                
+            else:    
+                home_pred = max(0, self.stats_models[f'home_{stat}'].predict(X_scaled)[0])
+                away_pred = max(0, self.stats_models[f'away_{stat}'].predict(X_scaled)[0])
+                
+                predictions[stat] = {
+                    'home': round(home_pred, 1),
+                    'away': round(away_pred, 1),
+                    'total': round(home_pred + away_pred, 1)
+                }
+            
         return predictions
     
     def evaluate_stats(self, X, targets):
